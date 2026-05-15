@@ -1,26 +1,36 @@
 @import "tailwindcss";
 
+/* ブランドカラー: 管理画面で指定された1色 (brand-primary) から、
+   CSS の color-mix で 50〜900 の階調を自動生成する。
+   OrgProvider が --color-brand-primary を runtime で書き換えると、
+   Tailwind の bg-brand-*, text-brand-*, border-brand-* などがすべて連動する。 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-brand-primary: #84cc16;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans:
+    var(--font-noto-sans-jp), "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    Meiryo, sans-serif;
+
+  /* 500 をメインカラーと一致させ、400/600 をその前後、
+     両端は white/black との color-mix でトーンを揃える。
+     oklch 空間で混色することで、どの色相でも自然な明暗が出やすい。 */
+  --color-brand-50: color-mix(in oklch, var(--color-brand-primary) 8%, white);
+  --color-brand-100: color-mix(in oklch, var(--color-brand-primary) 18%, white);
+  --color-brand-200: color-mix(in oklch, var(--color-brand-primary) 35%, white);
+  --color-brand-300: color-mix(in oklch, var(--color-brand-primary) 55%, white);
+  --color-brand-400: color-mix(in oklch, var(--color-brand-primary) 80%, white);
+  --color-brand-500: var(--color-brand-primary);
+  --color-brand-600: color-mix(in oklch, var(--color-brand-primary) 85%, black);
+  --color-brand-700: color-mix(in oklch, var(--color-brand-primary) 70%, black);
+  --color-brand-800: color-mix(in oklch, var(--color-brand-primary) 55%, black);
+  --color-brand-900: color-mix(in oklch, var(--color-brand-primary) 40%, black);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #fbfbf9;
+  color: #1f2937;
+  font-family: var(--font-sans);
 }
