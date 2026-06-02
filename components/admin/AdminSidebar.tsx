@@ -7,10 +7,14 @@ import { useOrg } from "../OrgProvider";
 
 const NAV_ITEMS: Array<{ href: string; label: string }> = [
   { href: "/admin", label: "ダッシュボード" },
-  { href: "/admin/settings", label: "組織設定" },
+  { href: "/admin/faqs", label: "FAQ管理" },
+  { href: "/admin/documents", label: "資料管理" },
   { href: "/admin/categories", label: "カテゴリ" },
   { href: "/admin/ranking", label: "質問ランキング" },
+  { href: "/admin/escalations", label: "相談一覧" },
   { href: "/admin/unanswered", label: "未回答一覧" },
+  { href: "/admin/users", label: "ユーザー管理" },
+  { href: "/admin/settings", label: "組織設定" },
 ];
 
 export function AdminSidebar() {

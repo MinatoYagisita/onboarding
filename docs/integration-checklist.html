@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>外部ストレージ連携 — 実装前確認事項</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #84cc16;
+      --brand-dark: #4d7c0f;
+      --brand-light: #f7fee7;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --blue: #3b82f6;
+      --blue-light: #eff6ff;
+      --amber: #f59e0b;
+      --amber-light: #fffbeb;
+      --red: #ef4444;
+      --red-light: #fef2f2;
+      --green: #22c55e;
+      --green-light: #f0fdf4;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--gray-700);
+      background: var(--gray-50);
+    }
+
+    /* ── Header ── */
+    .page-header {
+      background: var(--brand-dark);
+      color: #fff;
+      padding: 40px 32px 32px;
+    }
+    .page-header .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .page-header .subtitle {
+      opacity: 0.8;
+      font-size: 14px;
+    }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+      background: #fff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 20px 32px;
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .summary-item { display: flex; flex-direction: column; gap: 2px; }
+    .summary-item .s-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-400); font-weight: 600; }
+    .summary-item .s-value { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+
+    /* ── Main layout ── */
+    .main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── Intro ── */
+    .intro {
+      background: var(--brand-light);
+      border: 1px solid #bef264;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 36px;
+      font-size: 14px;
+      color: var(--brand-dark);
+    }
+    .intro strong { font-weight: 700; }
+
+    /* ── Question card ── */
+    .question-card {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      margin-bottom: 28px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .question-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .q-number {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gray-900);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+    .q-meta { flex: 1; }
+    .q-title { font-size: 17px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+    .q-desc { font-size: 13px; color: var(--gray-600); }
+
+    .impact-badge {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+    .impact-high { background: #fee2e2; color: #b91c1c; }
+    .impact-mid  { background: #fef3c7; color: #92400e; }
+    .impact-low  { background: #dcfce7; color: #166534; }
+
+    /* ── Options ── */
+    .options { padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; }
+
+    .option {
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 14px 16px;
+      position: relative;
+      transition: border-color 0.15s;
+    }
+    .option.recommended {
+      border-color: var(--brand);
+      background: var(--brand-light);
+    }
+    .option-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .option-letter {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--gray-200);
+      color: var(--gray-700);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .option.recommended .option-letter {
+      background: var(--brand);
+      color: #fff;
+    }
+    .option-title { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+    .recommend-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--brand-dark);
+      background: #bef264;
+      border-radius: 20px;
+      padding: 2px 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .option-body { font-size: 13px; color: var(--gray-600); padding-left: 34px; }
+
+    .pros-cons {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+      padding-left: 34px;
+      flex-wrap: wrap;
+    }
+    .pros, .cons {
+      font-size: 12px;
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+    .pros { background: var(--green-light); color: #15803d; }
+    .cons { background: var(--red-light); color: #b91c1c; }
+    .pros::before { content: "✓ "; font-weight: 700; }
+    .cons::before { content: "✗ "; font-weight: 700; }
+
+    /* ── Impact section ── */
+    .impact-section {
+      margin: 0 24px 20px;
+      background: var(--gray-50);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .impact-section .impact-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      color: var(--gray-400);
+      margin-bottom: 6px;
+    }
+    .impact-section p { font-size: 13px; color: var(--gray-700); }
+
+    /* ── Relation note ── */
+    .relation-note {
+      margin: 0 24px 20px;
+      padding: 12px 14px;
+      background: var(--blue-light);
+      border-radius: 8px;
+      font-size: 13px;
+      color: #1d4ed8;
+      border-left: 3px solid var(--blue);
+    }
+    .relation-note strong { font-weight: 700; }
+
+    /* ── Decision table ── */
+    .decision-section {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      margin-bottom: 28px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .decision-section h2 {
+      padding: 18px 24px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      background: var(--gray-50);
+      color: var(--gray-600);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    .confirmed { color: var(--green); font-weight: 700; }
+    .pending { color: var(--amber); font-weight: 700; }
+
+    /* ── Timeline ── */
+    .timeline-section {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .timeline-section h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 20px;
+    }
+    .timeline { position: relative; padding-left: 32px; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 9px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--gray-200);
+    }
+    .tl-item { position: relative; margin-bottom: 20px; }
+    .tl-item:last-child { margin-bottom: 0; }
+    .tl-dot {
+      position: absolute;
+      left: -28px;
+      top: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--gray-200);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tl-dot.done { border-color: var(--green); background: var(--green); }
+    .tl-dot.active { border-color: var(--brand); background: var(--brand); }
+    .tl-dot.waiting { border-color: var(--gray-300); background: var(--gray-100); }
+    .tl-dot span { font-size: 9px; color: #fff; font-weight: 700; }
+    .tl-title { font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 2px; }
+    .tl-desc { font-size: 13px; color: var(--gray-600); }
+
+    /* ── Footer ── */
+    .doc-footer {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--gray-400);
+      font-size: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .page-header { padding: 28px 20px; }
+      .summary-bar { padding: 16px 20px; gap: 20px; }
+      .main { padding: 24px 16px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="page-header">
+  <div class="label">📁 外部ストレージ連携</div>
+  <h1>外部ストレージ連携 設計記録</h1>
+  <p class="subtitle">Google Drive / Box 連携の設計判断と実装状況（2026-05-21 完了）</p>
+</header>
+
+<!-- Summary bar -->
+<div class="summary-bar">
+  <div class="summary-item">
+    <span class="s-label">実装済み</span>
+    <span class="s-value">全機能（本番テスト待ち）</span>
+  </div>
+  <div class="summary-item">
+    <span class="s-label">対象プロバイダ</span>
+    <span class="s-value">Google Drive + Box</span>
+  </div>
+  <div class="summary-item">
+    <span class="s-label">同期方式</span>
+    <span class="s-value">定期ポーリング</span>
+  </div>
+  <div class="summary-item">
+    <span class="s-label">残タスク</span>
+    <span class="s-value">本番 OAuth URL 登録のみ</span>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- Intro -->
+  <div class="intro">
+    <strong>このドキュメントについて（2026-05-21 更新）：</strong>
+    Google Drive / Box 連携機能は実装完了しています。本ドキュメントは設計判断の記録として残しています。
+    残タスクは本番環境の OAuth コールバック URL 登録のみです。
+  </div>
+
+  <!-- ── Q1 ── -->
+  <div class="question-card">
+    <div class="question-header">
+      <div class="q-number">1</div>
+      <div class="q-meta">
+        <div class="q-title">サブフォルダのファイルも取り込むか？</div>
+        <div class="q-desc">指定フォルダの直下のみ同期するか、その中のフォルダも再帰的に取得するか</div>
+      </div>
+      <span class="impact-badge impact-high">影響大</span>
+    </div>
+
+    <div class="options">
+      <div class="option recommended">
+        <div class="option-header">
+          <div class="option-letter">A</div>
+          <div class="option-title">フォルダ直下のみ（1階層）</div>
+          <span class="recommend-tag">推奨</span>
+        </div>
+        <div class="option-body">指定したフォルダの中にあるファイルだけを対象にする。サブフォルダの中身は取得しない。</div>
+        <div class="pros-cons">
+          <span class="pros">実装がシンプル、意図しないファイルの混入リスクが低い</span>
+          <span class="cons">フォルダ整理をしていると複数フォルダを登録する必要がある</span>
+        </div>
+      </div>
+
+      <div class="option">
+        <div class="option-header">
+          <div class="option-letter">B</div>
+          <div class="option-title">サブフォルダを再帰的に全取得</div>
+        </div>
+        <div class="option-body">指定フォルダ以下のすべてのファイルを対象にする（何階層でも）。</div>
+        <div class="pros-cons">
+          <span class="pros">フォルダ1つ指定するだけで完結する</span>
+          <span class="cons">意図せず大量ファイルが取り込まれるリスク、処理時間が読めない</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="impact-section">
+      <div class="impact-label">この決定が影響すること</div>
+      <p>同期処理のコード量とテスト範囲に差が出ます。A → B への変更は後からでも比較的容易です。まず A で始めて、要望があれば B に拡張することを推奨します。</p>
+    </div>
+  </div>
+
+  <!-- ── Q2 ── -->
+  <div class="question-card">
+    <div class="question-header">
+      <div class="q-number">2</div>
+      <div class="q-meta">
+        <div class="q-title">連携を解除したとき、取り込み済みのファイルはどうするか？</div>
+        <div class="q-desc">管理者が「接続解除」したとき、すでにシステムに取り込まれたドキュメントをどう扱うか</div>
+      </div>
+      <span class="impact-badge impact-mid">影響中</span>
+    </div>
+
+    <div class="options">
+      <div class="option recommended">
+        <div class="option-header">
+          <div class="option-letter">A</div>
+          <div class="option-title">論理削除する（検索対象から外す）</div>
+          <span class="recommend-tag">推奨</span>
+        </div>
+        <div class="option-body">接続解除と同時に、そのプロバイダ経由で取り込んだドキュメントをすべて「削除済み」扱いにする。Claude の回答の出典からも除外される。</div>
+        <div class="pros-cons">
+          <span class="pros">データが一貫する、「切ったら終わり」でわかりやすい</span>
+          <span class="cons">再接続すると再度同期が必要になる</span>
+        </div>
+      </div>
+
+      <div class="option">
+        <div class="option-header">
+          <div class="option-letter">B</div>
+          <div class="option-title">そのまま残す（手動で個別削除）</div>
+        </div>
+        <div class="option-body">接続解除しても取り込み済みのドキュメントは残り、引き続き検索対象になる。管理者が必要なら手動で1件ずつ削除する。</div>
+        <div class="pros-cons">
+          <span class="pros">再接続しても差分だけ同期できる</span>
+          <span class="cons">削除し忘れると古い資料が検索に残り続ける</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="impact-section">
+      <div class="impact-label">この決定が影響すること</div>
+      <p>接続解除の API 実装と、管理画面のドキュメント一覧の設計に影響します。A の場合は解除時に一括更新する処理が入ります。</p>
+    </div>
+  </div>
+
+  <!-- ── Q3 ── -->
+  <div class="question-card">
+    <div class="question-header">
+      <div class="q-number">3</div>
+      <div class="q-meta">
+        <div class="q-title">同期が失敗したとき、管理者に通知するか？</div>
+        <div class="q-desc">トークン失効やAPI障害で同期が止まったとき、どう知らせるか</div>
+      </div>
+      <span class="impact-badge impact-mid">影響中</span>
+    </div>
+
+    <div class="options">
+      <div class="option recommended">
+        <div class="option-header">
+          <div class="option-letter">A</div>
+          <div class="option-title">管理画面にエラーを表示するだけ（通知なし）</div>
+          <span class="recommend-tag">推奨</span>
+        </div>
+        <div class="option-body">同期エラーは管理画面の「連携設定」ページにエラーメッセージを表示するだけ。Slack/メール通知は送らない。</div>
+        <div class="pros-cons">
+          <span class="pros">実装が最小限、通知チャネルの設定が不要</span>
+          <span class="cons">管理者が気づかない可能性がある</span>
+        </div>
+      </div>
+
+      <div class="option">
+        <div class="option-header">
+          <div class="option-letter">B</div>
+          <div class="option-title">既存の通知チャネル（Slack・メール）に送る</div>
+        </div>
+        <div class="option-body">未回答通知と同じ <code>notification_channels</code> を使って Slack やメールでエラーを知らせる。</div>
+        <div class="pros-cons">
+          <span class="pros">即時に気づける、放置リスクが低い</span>
+          <span class="cons">通知チャネルが未実装なので同時実装が必要になる</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="relation-note">
+      <strong>補足：</strong> 通知チャネル（Slack・メール送信）は実装済みです。<code>notification_channels</code> テーブルへの設定があれば、同期エラー時も同チャネルへ通知を送ることができます。
+    </div>
+  </div>
+
+  <!-- ── Q4 ── -->
+  <div class="question-card">
+    <div class="question-header">
+      <div class="q-number">4</div>
+      <div class="q-meta">
+        <div class="q-title">フォルダはどうやって選ばせるか？</div>
+        <div class="q-desc">管理者が「このフォルダを同期する」と指定する UI の方式</div>
+      </div>
+      <span class="impact-badge impact-low">影響小</span>
+    </div>
+
+    <div class="options">
+      <div class="option recommended">
+        <div class="option-header">
+          <div class="option-letter">A</div>
+          <div class="option-title">Picker API（フォルダブラウザ）</div>
+          <span class="recommend-tag">推奨</span>
+        </div>
+        <div class="option-body">
+          Google Drive Picker / Box Content Explorer を埋め込んで、
+          実際のフォルダツリーをクリックして選ぶ。フォルダ ID を手入力する必要がない。
+        </div>
+        <div class="pros-cons">
+          <span class="pros">操作が直感的、ID 入力ミスがない</span>
+          <span class="cons">追加の JavaScript SDK 読み込みが必要</span>
+        </div>
+      </div>
+
+      <div class="option">
+        <div class="option-header">
+          <div class="option-letter">B</div>
+          <div class="option-title">フォルダ ID を直接テキスト入力</div>
+        </div>
+        <div class="option-body">
+          Drive/Box の URL や設定画面からフォルダ ID をコピーして、テキストボックスに貼り付ける。
+        </div>
+        <div class="pros-cons">
+          <span class="pros">実装が最もシンプル</span>
+          <span class="cons">ID の調べ方が非エンジニアにはわかりにくい</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="impact-section">
+      <div class="impact-label">この決定が影響すること</div>
+      <p>管理画面の UI 実装量に差が出ますが、バックエンド（同期処理）には影響しません。B で先に動かして、後から A に変えることも容易です。</p>
+    </div>
+  </div>
+
+  <!-- ── 確認済み事項 ── -->
+  <div class="decision-section">
+    <h2>✅ すでに決まっている設計</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>決定内容</th>
+          <th>状態</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>対象プロバイダ</strong></td>
+          <td>Google Drive と Box を同時対応</td>
+          <td><span class="confirmed">✓ 確定</span></td>
+        </tr>
+        <tr>
+          <td><strong>同期のトリガー</strong></td>
+          <td>定期ポーリング（デフォルト1時間ごと）</td>
+          <td><span class="confirmed">✓ 確定</span></td>
+        </tr>
+        <tr>
+          <td><strong>取り込み単位</strong></td>
+          <td>フォルダ指定（以下のファイルを全取得）</td>
+          <td><span class="confirmed">✓ 確定</span></td>
+        </tr>
+        <tr>
+          <td><strong>認証方式</strong></td>
+          <td>組織ごとに管理者が OAuth 認可（各テナントが自分のアカウントで接続）</td>
+          <td><span class="confirmed">✓ 確定</span></td>
+        </tr>
+        <tr>
+          <td><strong>トークン保管</strong></td>
+          <td>リフレッシュトークンを AES-256-GCM で暗号化して DB 保存</td>
+          <td><span class="confirmed">✓ 確定</span></td>
+        </tr>
+        <tr>
+          <td><strong>対応ファイル形式</strong></td>
+          <td>PDF・TXT・Word（.docx）・Google ドキュメント（Excel・スキャンPDF は対象外）</td>
+          <td><span class="confirmed">✓ 確定</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 実装の流れ ── -->
+  <div class="timeline-section">
+    <h2>実装の進捗（2026-05-21 時点）</h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot done"><span>✓</span></div>
+        <div class="tl-title">設計確定</div>
+        <div class="tl-desc">各設計判断は実装を通じて確定済み</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot done"><span>✓</span></div>
+        <div class="tl-title">DB マイグレーション</div>
+        <div class="tl-desc"><code>drive_connections</code> テーブル・<code>documents</code> テーブルの拡張カラム（<code>external_id</code>・<code>source_type</code>）追加済み</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot done"><span>✓</span></div>
+        <div class="tl-title">OAuth フロー実装</div>
+        <div class="tl-desc">Google / Box それぞれの認証 URL 生成・コールバックでトークン保存・AES-256-GCM 暗号化済み</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot done"><span>✓</span></div>
+        <div class="tl-title">同期処理実装</div>
+        <div class="tl-desc">ファイル一覧取得・差分検知・ダウンロード・テキスト抽出・DB 保存。<code>lib/drive-sync.ts</code> に実装済み</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot done"><span>✓</span></div>
+        <div class="tl-title">管理画面 UI 実装</div>
+        <div class="tl-desc">連携設定ページ・フォルダ ID 入力・同期状態の表示・手動同期ボタン実装済み</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot active"></div>
+        <div class="tl-title">本番環境の OAuth コールバック URL 登録</div>
+        <div class="tl-desc">Google Cloud Console / Box 開発者コンソールで本番 URL を Redirect URI に追加する（← 残りタスク）</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="doc-footer">
+  作成日: 2026-05-15 &nbsp;·&nbsp; 更新日: 2026-05-21 &nbsp;·&nbsp; オンボーディング Q&A SaaS &nbsp;·&nbsp; 外部ストレージ連携 設計記録
+</footer>
+
+</body>
+</html>

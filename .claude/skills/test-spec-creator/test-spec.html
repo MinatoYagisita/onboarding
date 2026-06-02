@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>テスト仕様書 - オンボーディング Q&A システム</title>
+<style>
+  :root {
+    --brand: #84cc16;
+    --brand-dark: #65a30d;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --red: #ef4444;
+    --orange: #f97316;
+    --yellow: #eab308;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; color: var(--gray-900); background: var(--gray-50); line-height: 1.5; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+  h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: #6b7280; font-size: 13px; margin-bottom: 32px; }
+  h2 { font-size: 17px; font-weight: 700; margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--gray-200); }
+  h3 { font-size: 14px; font-weight: 600; margin: 20px 0 10px; color: var(--gray-700); }
+
+  /* Summary cards */
+  .summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+  .card { background: white; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px 20px; min-width: 120px; }
+  .card-num { font-size: 26px; font-weight: 700; color: var(--brand-dark); }
+  .card-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+  /* Priority badges */
+  .p-high { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .p-mid  { background: #fef9c3; color: #854d0e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .p-low  { background: #f0fdf4; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+  /* Tool badges */
+  .t-vitest     { background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .t-playwright { background: #ede9fe; color: #5b21b6; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+  /* Observation badges */
+  .obs-normal  { background: #dcfce7; color: #166534; padding: 2px 7px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+  .obs-error   { background: #fee2e2; color: #991b1b; padding: 2px 7px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+  .obs-border  { background: #dbeafe; color: #1e40af; padding: 2px 7px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+  .obs-auth    { background: #fce7f3; color: #9d174d; padding: 2px 7px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+  .obs-dup     { background: #ffedd5; color: #9a3412; padding: 2px 7px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+  .obs-nav     { background: #f0f9ff; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+
+  /* Table */
+  .tc-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; border: 1px solid var(--gray-200); margin-bottom: 16px; font-size: 13px; }
+  .tc-table th { background: var(--gray-100); padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; color: var(--gray-700); border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
+  .tc-table td { padding: 9px 12px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+  .tc-table tr:last-child td { border-bottom: none; }
+  .tc-table tr:hover td { background: var(--gray-50); }
+  .tc-id { font-family: monospace; font-size: 12px; color: #6b7280; white-space: nowrap; }
+  .steps { padding-left: 16px; margin: 0; }
+  .steps li { margin-bottom: 2px; }
+
+  /* Questions */
+  .questions { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; }
+  .questions h3 { color: #92400e; margin-top: 0; }
+  .q-list { list-style: none; padding: 0; margin-top: 8px; }
+  .q-list li { padding: 4px 0; display: flex; gap: 8px; align-items: flex-start; }
+  .q-list li::before { content: "Q"; background: #fcd34d; color: #92400e; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; }
+
+  /* Section nav */
+  .toc { background: white; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px 20px; margin-bottom: 32px; }
+  .toc-title { font-weight: 700; margin-bottom: 10px; font-size: 13px; }
+  .toc-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .toc-link { background: var(--gray-100); color: var(--gray-700); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+  .toc-link:hover { background: var(--gray-200); }
+
+  /* Callout */
+  .callout { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+  .callout-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .callout-warn { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>テスト仕様書 — オンボーディング Q&A システム</h1>
+<p class="subtitle">作成日: 2026-05-22 ／ 対象バージョン: 実装完了版（2026-05-21時点）／ ツール: Vitest + Playwright</p>
+
+<!-- Summary -->
+<div class="summary">
+  <div class="card"><div class="card-num">87</div><div class="card-label">テストケース総数</div></div>
+  <div class="card"><div class="card-num">38</div><div class="card-label">Vitest</div></div>
+  <div class="card"><div class="card-num">49</div><div class="card-label">Playwright</div></div>
+  <div class="card"><div class="card-num">42</div><div class="card-label">優先度：高</div></div>
+  <div class="card"><div class="card-num">31</div><div class="card-label">優先度：中</div></div>
+  <div class="card"><div class="card-num">14</div><div class="card-label">優先度：低</div></div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <div class="toc-title">セクション一覧</div>
+  <div class="toc-list">
+    <a href="#sec-auth" class="toc-link">1. パスコード認証</a>
+    <a href="#sec-webauthn" class="toc-link">2. パスキー（WebAuthn）</a>
+    <a href="#sec-session" class="toc-link">3. セッション・権限</a>
+    <a href="#sec-thread" class="toc-link">4. スレッド作成</a>
+    <a href="#sec-query" class="toc-link">5. 追加質問</a>
+    <a href="#sec-thread-mgmt" class="toc-link">6. スレッド管理</a>
+    <a href="#sec-faq" class="toc-link">7. FAQ</a>
+    <a href="#sec-category" class="toc-link">8. カテゴリ</a>
+    <a href="#sec-document" class="toc-link">9. 資料</a>
+    <a href="#sec-escalation" class="toc-link">10. エスカレーション</a>
+    <a href="#sec-ranking" class="toc-link">11. ランキング</a>
+    <a href="#sec-unanswered" class="toc-link">12. 未回答</a>
+    <a href="#sec-users" class="toc-link">13. ユーザー管理</a>
+    <a href="#sec-notify" class="toc-link">14. 通知設定</a>
+    <a href="#sec-orgsettings" class="toc-link">15. 組織設定</a>
+    <a href="#sec-bugs" class="toc-link">16. バグ修正確認</div>
+  </div>
+</div>
+
+<div class="callout callout-info">
+  <strong>前提:</strong> ローカル開発は <code>DEFAULT_ORG_SLUG=sprout</code> / DB はテスト用 PostgreSQL / Claude API はモック。
+  Playwright のベースURL: <code>http://localhost:3000</code>。モックログイン API: <code>POST /api/auth/mock-login</code>（admin/Zaq12wsx）。
+</div>
+
+<!-- ============================================================ -->
+<h2 id="sec-auth">1. パスコード認証</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-A001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>有効メールでパスコード送付・ログイン成功</td>
+  <td>member@sprout.example.com が DB に存在</td>
+  <td><ol class="steps"><li>/login でメールアドレス入力</li><li>「パスコードを送信」押下</li><li>ターミナルログから6桁コード取得</li><li>コード入力・送信</li></ol></td>
+  <td>ウェルカム画面に遷移、サイドバーにユーザー名表示</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-A002</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>存在しないメールでも 200 を返す（列挙攻撃防止）</td>
+  <td>-</td>
+  <td><ol class="steps"><li>POST /api/auth/passcode/request に未登録メール送信</li></ol></td>
+  <td>200 OK が返る（401や404にならない）</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-A003</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>誤ったパスコードで 401</td>
+  <td>有効パスコードが発行済み</td>
+  <td><ol class="steps"><li>POST /api/auth/passcode/verify に誤コードを送信</li></ol></td>
+  <td>401 UNAUTHENTICATED</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-A004</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>期限切れパスコードで 400</td>
+  <td>expires_at を過去に設定したパスコードが DB に存在</td>
+  <td><ol class="steps"><li>POST /api/auth/passcode/verify に正しいコード送信</li></ol></td>
+  <td>400 PASSCODE_EXPIRED</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-A005</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>検証済みパスコードの再利用で 409</td>
+  <td>verified_at が設定済みのパスコードが DB に存在</td>
+  <td><ol class="steps"><li>POST /api/auth/passcode/verify に同じコード再送信</li></ol></td>
+  <td>409 PASSCODE_ALREADY_USED</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-A006</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>5回失敗でロックアウト → 429</td>
+  <td>failed_count=4 のロックアウトレコードが存在</td>
+  <td><ol class="steps"><li>POST /api/auth/passcode/verify に誤コード送信</li></ol></td>
+  <td>429 RATE_LIMITED（Retry-After ヘッダーあり）</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-A007</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>ロックアウト中は UI でエラーメッセージ表示</td>
+  <td>ロックアウト済み状態</td>
+  <td><ol class="steps"><li>/login でパスコード送付後にコード入力</li></ol></td>
+  <td>「しばらく待ってから再試行してください」のメッセージが表示</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-A008</td>
+  <td><span class="obs-border">境界値</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>パスコードは 100000〜999999 の範囲</td>
+  <td>-</td>
+  <td><ol class="steps"><li>generateCode() を 1000 回呼んで範囲チェック</li></ol></td>
+  <td>全結果が 100000 以上 1000000 未満の 6 桁文字列</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-A009</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>管理者がパスコードでログイン成功</td>
+  <td>admin@sprout.example.com が admin ロールで存在</td>
+  <td><ol class="steps"><li>/admin/login でメール入力・パスコード送付・入力</li></ol></td>
+  <td>管理画面ダッシュボードに遷移</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-webauthn">2. パスキー（WebAuthn）</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-WA001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>登録チャレンジ生成エンドポイントが正しい形式を返す</td>
+  <td>ログイン済みセッション</td>
+  <td><ol class="steps"><li>POST /api/auth/webauthn/register/options</li></ol></td>
+  <td>challenge・rp・user フィールドを含む JSON が返る</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-WA002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>認証チャレンジ生成エンドポイントが正しい形式を返す</td>
+  <td>パスキー登録済みユーザー</td>
+  <td><ol class="steps"><li>POST /api/auth/webauthn/authenticate/options</li></ol></td>
+  <td>challenge・allowCredentials を含む JSON が返る</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-WA003</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>未登録ユーザーへの認証チャレンジで適切なエラー</td>
+  <td>パスキー未登録メールアドレス</td>
+  <td><ol class="steps"><li>POST /api/auth/webauthn/authenticate/options にメール送信</li></ol></td>
+  <td>404 または空の allowCredentials が返る</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-WA004</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>アカウント設定画面でパスキー一覧が表示される</td>
+  <td>ログイン済み、パスキー1件登録済み</td>
+  <td><ol class="steps"><li>/settings にアクセス</li></ol></td>
+  <td>登録済みパスキーの名前と登録日が表示される</td>
+  <td><span class="p-low">低</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-WA005</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>パスキー削除後に一覧から消える</td>
+  <td>パスキー1件登録済み</td>
+  <td><ol class="steps"><li>/settings でパスキーの削除ボタン押下</li><li>確認ダイアログで削除</li></ol></td>
+  <td>一覧から消え「パスキーがありません」表示</td>
+  <td><span class="p-low">低</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-session">3. セッション・権限</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-S001</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>未認証で /api/threads に 401</td>
+  <td>Cookie なし</td>
+  <td><ol class="steps"><li>Cookie なしで GET /api/threads</li></ol></td>
+  <td>401 UNAUTHENTICATED</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-S002</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>member ロールで /api/admin/* に 403</td>
+  <td>member セッション Cookie</td>
+  <td><ol class="steps"><li>GET /api/admin/ranking を member Cookie で呼ぶ</li></ol></td>
+  <td>403 FORBIDDEN</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-S003</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>管理者 Cookie でユーザー API が通らない（バグ修正確認）</td>
+  <td>管理者セッション Cookie（ob_admin_session）のみ</td>
+  <td><ol class="steps"><li>ob_admin_session Cookie のみで GET /api/threads 呼ぶ</li></ol></td>
+  <td>401 UNAUTHENTICATED（管理者 Cookie でユーザー API は通らない）</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-S004</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>未認証で / にアクセスすると /login にリダイレクト</td>
+  <td>Cookie なし</td>
+  <td><ol class="steps"><li>http://localhost:3000/ にアクセス</li></ol></td>
+  <td>/login に自動リダイレクト</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-S005</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>未認証で /admin にアクセスすると /admin/login にリダイレクト</td>
+  <td>Cookie なし</td>
+  <td><ol class="steps"><li>http://localhost:3000/admin にアクセス</li></ol></td>
+  <td>/admin/login に自動リダイレクト</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-S006</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>他ユーザーのスレッドへのアクセスで 403</td>
+  <td>ユーザーAのスレッドIDがある、ユーザーBでログイン済み</td>
+  <td><ol class="steps"><li>ユーザーB の Cookie で GET /api/threads/[userA_thread_id]</li></ol></td>
+  <td>404 NOT_FOUND（存在しないスレッドと同等に扱う）</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-S007</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>ログアウト後にページにアクセスすると /login にリダイレクト</td>
+  <td>ログイン済み</td>
+  <td><ol class="steps"><li>サイドバーのログアウトボタン押下</li><li>/ にアクセス</li></ol></td>
+  <td>/login にリダイレクト</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-thread">4. スレッド作成（POST /api/threads）</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-T001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>質問を入力・送信して回答が表示される</td>
+  <td>ログイン済み、FAQ/資料が存在（モック）</td>
+  <td><ol class="steps"><li>チャット入力欄に「休憩は何分ですか？」入力</li><li>Cmd+Enter 送信</li></ol></td>
+  <td>回答カード（結論・根拠・相談先）が表示される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-T002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>POST /api/threads が 201 と正しいレスポンス構造を返す</td>
+  <td>member セッション、Claude API モック（answer 返却）</td>
+  <td><ol class="steps"><li>POST /api/threads に {"question": "テスト"} 送信</li></ol></td>
+  <td>201、id/turns/createdAt を含む JSON、turns[0].result.kind === "answer"</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-T003</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>空文字の question で 400</td>
+  <td>member セッション</td>
+  <td><ol class="steps"><li>POST /api/threads に {"question": ""} 送信</li></ol></td>
+  <td>400 VALIDATION_ERROR</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-T004</td>
+  <td><span class="obs-border">境界値</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>question 1000文字ちょうどで成功</td>
+  <td>member セッション、Claude API モック</td>
+  <td><ol class="steps"><li>POST /api/threads に 1000 文字の question 送信</li></ol></td>
+  <td>201</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-T005</td>
+  <td><span class="obs-border">境界値</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>question 1001文字で 400</td>
+  <td>member セッション</td>
+  <td><ol class="steps"><li>POST /api/threads に 1001 文字の question 送信</li></ol></td>
+  <td>400 VALIDATION_ERROR</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-T006</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>Claude が not-found を返した場合に result.kind が "not-found"</td>
+  <td>Claude API モック（not-found 返却）</td>
+  <td><ol class="steps"><li>POST /api/threads 送信</li></ol></td>
+  <td>201、turns[0].result.kind === "not-found"、relatedFaqs が配列</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-T007</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>matchedFaqId がある場合に askedCount が +1 される</td>
+  <td>FAQ faq_01 の askedCount=10、Claude API モックが matchedFaqId:"faq_01" 返却</td>
+  <td><ol class="steps"><li>POST /api/threads 送信後 DB 確認</li></ol></td>
+  <td>faqs.askedCount が 11 になる</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-T008</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>他組織の matchedFaqId では askedCount が変わらない（バグ修正確認）</td>
+  <td>別組織の FAQ の ID を Claude API モックが返す</td>
+  <td><ol class="steps"><li>POST /api/threads 送信後 DB 確認</li></ol></td>
+  <td>別組織 FAQ の askedCount は変化しない</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-T009</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>質問後にサイドバーにスレッドが追加される</td>
+  <td>ログイン済み</td>
+  <td><ol class="steps"><li>質問送信</li><li>サイドバー確認</li></ol></td>
+  <td>サイドバーに新しいスレッドのタイトル（質問の冒頭）が表示される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-query">5. 追加質問（POST /api/threads/:threadId/queries）</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-Q001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>追加質問を送信して 2 つ目の回答が表示される</td>
+  <td>スレッドが 1 turn 存在</td>
+  <td><ol class="steps"><li>チャット入力に「分割取得できますか？」入力・送信</li></ol></td>
+  <td>2 つ目の回答カードが追加表示される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-Q002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>turnIndex がインクリメントされる</td>
+  <td>thread に queries[turnIndex=0] 存在</td>
+  <td><ol class="steps"><li>POST /api/threads/:id/queries 送信</li></ol></td>
+  <td>レスポンスの turnIndex === 1</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-Q003</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>追加質問後に thread.updatedAt が更新される</td>
+  <td>スレッドが存在</td>
+  <td><ol class="steps"><li>POST /api/threads/:id/queries 送信後 DB 確認</li></ol></td>
+  <td>queryThread.updatedAt が現在時刻に更新されている</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-Q004</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>他ユーザーのスレッドに追加質問で 404</td>
+  <td>ユーザーAのスレッド、ユーザーBがリクエスト</td>
+  <td><ol class="steps"><li>POST /api/threads/[userA_thread]/queries を userB Cookie で送信</li></ol></td>
+  <td>404 NOT_FOUND</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-Q005</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>フィードバック「役に立った」を PATCH で保存</td>
+  <td>query が存在</td>
+  <td><ol class="steps"><li>PATCH /api/threads/:id/queries/:qid に {"feedback": "helpful"}</li></ol></td>
+  <td>200、DB の queries.feedback === "helpful"</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-Q006</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>不正な feedback 値で 400</td>
+  <td>query が存在</td>
+  <td><ol class="steps"><li>PATCH に {"feedback": "unknown"} 送信</li></ol></td>
+  <td>400 VALIDATION_ERROR</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-thread-mgmt">6. スレッド管理（GET / PATCH / DELETE）</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-TM001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>GET /api/threads の turnCount が正確（バグ修正確認）</td>
+  <td>3 turn を持つスレッドが存在</td>
+  <td><ol class="steps"><li>GET /api/threads</li></ol></td>
+  <td>items[0].turnCount === 3</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-TM002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>サイドバーのスレッドをピン留めできる</td>
+  <td>スレッドが存在</td>
+  <td><ol class="steps"><li>サイドバーでスレッドをホバー</li><li>ピン留めアイコン押下</li></ol></td>
+  <td>ピン留めエリアにスレッドが移動する</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-TM003</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>スレッド削除（論理削除）後に GET で返らない</td>
+  <td>スレッドが存在</td>
+  <td><ol class="steps"><li>DELETE /api/threads/:id</li><li>GET /api/threads で一覧取得</li></ol></td>
+  <td>削除したスレッドが一覧に含まれない</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-TM004</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>ページリロード後もスレッド履歴が残る</td>
+  <td>質問を 1 件送信済み</td>
+  <td><ol class="steps"><li>ページをリロード</li></ol></td>
+  <td>サイドバーに以前のスレッドが表示される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-TM005</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>pinned=true でフィルタ済み一覧が返る</td>
+  <td>pinned スレッド1件、未 pinned スレッド1件</td>
+  <td><ol class="steps"><li>GET /api/threads?pinned=true</li></ol></td>
+  <td>items に pinned スレッドのみ</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-faq">7. FAQ</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-F001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>FAQタブを開くと公開済み FAQ が表示される</td>
+  <td>isPublished=true の FAQ が 3 件存在</td>
+  <td><ol class="steps"><li>「よくある質問」タブを押下</li></ol></td>
+  <td>3 件の FAQ カードが表示される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-F002</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>isPublished=false の FAQ は GET /api/faqs に返らない</td>
+  <td>isPublished=false の FAQ が存在</td>
+  <td><ol class="steps"><li>GET /api/faqs（member）</li></ol></td>
+  <td>下書き FAQ は含まれない</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-F003</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>管理者が FAQ を新規作成できる（isPublished=false がデフォルト）</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>POST /api/faqs に question/answer を送信</li></ol></td>
+  <td>201、レスポンスの isPublished === false</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-F004</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>管理者が FAQ を公開状態に更新できる</td>
+  <td>isPublished=false の FAQ が存在</td>
+  <td><ol class="steps"><li>PATCH /api/faqs/:id に {"isPublished": true}</li></ol></td>
+  <td>200、DB の isPublished === true</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-F005</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>member による FAQ 作成で 403</td>
+  <td>member セッション</td>
+  <td><ol class="steps"><li>POST /api/faqs に member Cookie で送信</li></ol></td>
+  <td>403 FORBIDDEN</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-F006</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>カテゴリでフィルタすると該当 FAQ のみ表示</td>
+  <td>カテゴリA に FAQ 2件、カテゴリB に FAQ 1件</td>
+  <td><ol class="steps"><li>FAQタブでカテゴリA を選択</li></ol></td>
+  <td>カテゴリA の FAQ 2件のみ表示</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-F007</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>FAQ 削除後に GET /api/faqs に返らない</td>
+  <td>FAQ が存在</td>
+  <td><ol class="steps"><li>DELETE /api/faqs/:id</li><li>GET /api/faqs</li></ol></td>
+  <td>削除した FAQ が含まれない</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-F008</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>必須フィールド欠損で 400</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>POST /api/faqs に question なしで送信</li></ol></td>
+  <td>400 VALIDATION_ERROR（details.errors に question フィールドのエラー）</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-category">8. カテゴリ</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-C001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>カテゴリ作成・一覧取得</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>POST /api/categories に {slug, name} 送信</li><li>GET /api/categories</li></ol></td>
+  <td>201、作成したカテゴリが一覧に含まれる</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-C002</td>
+  <td><span class="obs-dup">重複</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>同組織内で slug が重複する場合に 409</td>
+  <td>slug "first-day" のカテゴリが存在</td>
+  <td><ol class="steps"><li>POST /api/categories に {"slug": "first-day"} 送信</li></ol></td>
+  <td>409 CONFLICT</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-C003</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>管理画面でカテゴリを追加・削除できる</td>
+  <td>admin ログイン済み</td>
+  <td><ol class="steps"><li>/admin/categories でカテゴリ名入力・追加</li><li>削除ボタン押下</li></ol></td>
+  <td>追加後に一覧に表示、削除後に消える</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-document">9. 資料管理</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-D001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>PDF ファイルをアップロードして一覧に表示される</td>
+  <td>admin ログイン済み、LocalStack 起動済み</td>
+  <td><ol class="steps"><li>/admin/documents で PDF ファイルを選択・アップロード</li></ol></td>
+  <td>一覧にファイル名とサイズが表示される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-D002</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>2MB 超のファイルで 400 FILE_TOO_LARGE</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>POST /api/documents に 2MB+1byte のファイル送信</li></ol></td>
+  <td>400 FILE_TOO_LARGE</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-D003</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>非対応形式（.xlsx）で 400 UNSUPPORTED_FILE_TYPE</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>POST /api/documents に .xlsx ファイル送信</li></ol></td>
+  <td>400 UNSUPPORTED_FILE_TYPE</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-D004</td>
+  <td><span class="obs-border">境界値</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>2MB ちょうどのファイルは成功</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>POST /api/documents に 2097152 バイトのファイル送信</li></ol></td>
+  <td>201</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-D005</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>資料削除後は GET /api/documents に返らない（論理削除）</td>
+  <td>資料が存在</td>
+  <td><ol class="steps"><li>DELETE /api/documents/:id</li><li>GET /api/documents</li></ol></td>
+  <td>削除資料が含まれない、DB の deletedAt に日時がセット</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-D006</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>member による資料アップロードで 403</td>
+  <td>member セッション</td>
+  <td><ol class="steps"><li>POST /api/documents を member Cookie で送信</li></ol></td>
+  <td>403 FORBIDDEN</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-escalation">10. エスカレーション</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-E001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>「担当者に送る」ダイアログを開いて送信できる</td>
+  <td>ログイン済み、回答済みスレッド存在</td>
+  <td><ol class="steps"><li>回答カードの「担当者に送る」押下</li><li>3ステップUIで内容入力・送信</li></ol></td>
+  <td>送信完了メッセージが表示される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-E002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>POST エスカレーションで DB に escalation レコードが作られる</td>
+  <td>query が存在、member セッション</td>
+  <td><ol class="steps"><li>POST /api/threads/:id/queries/:qid/escalations に message 送信</li></ol></td>
+  <td>201、DB に escalation レコード（status="pending"）が作られる</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-E003</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>管理画面の相談一覧に表示され、対応済みに更新できる</td>
+  <td>エスカレーション 1 件存在、admin ログイン済み</td>
+  <td><ol class="steps"><li>/admin/escalations を開く</li><li>「対応済み」ボタン押下</li></ol></td>
+  <td>ステータスが「対応済み」に変わる</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-E004</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>message が空文字で 400</td>
+  <td>member セッション</td>
+  <td><ol class="steps"><li>POST escalation に {"message": ""} 送信</li></ol></td>
+  <td>400 VALIDATION_ERROR</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-ranking">11. ランキング（GET /api/admin/ranking）</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-R001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>askedCount 降順で返る</td>
+  <td>FAQ A(count=10), B(count=50), C(count=5) が存在</td>
+  <td><ol class="steps"><li>GET /api/admin/ranking</li></ol></td>
+  <td>B→A→C の順で items に返る</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-R002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>from/to でフィルタできる</td>
+  <td>updatedAt が 2026-01-01 の FAQ と 2026-06-01 の FAQ が存在</td>
+  <td><ol class="steps"><li>GET /api/admin/ranking?from=2026-05-01&to=2026-05-31</li></ol></td>
+  <td>5月更新の FAQ のみ返る</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-R003</td>
+  <td><span class="obs-border">境界値</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>limit=100 が上限</td>
+  <td>FAQ が 200 件存在</td>
+  <td><ol class="steps"><li>GET /api/admin/ranking?limit=200</li></ol></td>
+  <td>items は最大 100 件</td>
+  <td><span class="p-low">低</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-R004</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>管理画面のランキングページにデータが表示される</td>
+  <td>askedCount > 0 の FAQ が存在、admin ログイン済み</td>
+  <td><ol class="steps"><li>/admin/ranking を開く</li></ol></td>
+  <td>FAQが質問回数順にリスト表示される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-unanswered">12. 未回答一覧（GET /api/admin/unanswered）</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-U001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>resultKind="not_found" の query が一覧に含まれる</td>
+  <td>not_found クエリが 2 件存在</td>
+  <td><ol class="steps"><li>GET /api/admin/unanswered</li></ol></td>
+  <td>items に 2 件返る</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-U002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>未回答から「FAQに追加」リンクで FAQ 管理に遷移</td>
+  <td>未回答が存在、admin ログイン済み</td>
+  <td><ol class="steps"><li>/admin/unanswered の「FAQに追加」リンク押下</li></ol></td>
+  <td>/admin/faqs の新規作成画面に質問文が引き継がれて遷移</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-users">13. ユーザー管理</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-UM001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>ユーザー招待でパスコードがメール送付される（開発環境はログ出力）</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>POST /api/admin/users に {email, displayName, role} 送信</li></ol></td>
+  <td>201、コンソールに [DEV] passcode が出力される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-UM002</td>
+  <td><span class="obs-dup">重複</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>既存メールアドレスで招待すると 409</td>
+  <td>member@sprout.example.com が登録済み</td>
+  <td><ol class="steps"><li>POST /api/admin/users に同メールを送信</li></ol></td>
+  <td>409 CONFLICT</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-UM003</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>ユーザー削除（論理削除）後は一覧に返らない</td>
+  <td>ユーザーが存在</td>
+  <td><ol class="steps"><li>DELETE /api/admin/users/:id</li><li>GET /api/admin/users</li></ol></td>
+  <td>削除ユーザーが含まれない</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-UM004</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>ロール更新で member → admin に変更できる</td>
+  <td>member ユーザーが存在</td>
+  <td><ol class="steps"><li>PATCH /api/admin/users/:id に {"role": "admin"}</li></ol></td>
+  <td>200、DB の role が "admin" に更新</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-notify">14. 通知設定</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-N001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>通知チャネルを PATCH で更新できる</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>PATCH /api/admin/notifications に Slack Webhook URL を送信</li></ol></td>
+  <td>200、DB に notification_channels が upsert される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-N002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>未回答発生時に enabled な Slack チャネルに通知が飛ぶ</td>
+  <td>Slack チャネルが enabled=true で登録済み、fetch モック</td>
+  <td><ol class="steps"><li>notifyUnanswered() を呼び出す</li></ol></td>
+  <td>Webhook URL に POST が呼ばれる（fetch モックで確認）</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-N003</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>エスカレーション通知メール HTML に XSS がない（バグ修正確認）</td>
+  <td>-</td>
+  <td><ol class="steps"><li>notifyEscalation() に <code>&lt;script&gt;alert(1)&lt;/script&gt;</code> を含む payload を渡す</li><li>生成される HTML を確認</li></ol></td>
+  <td>HTML に &amp;lt;script&amp;gt; がエスケープされて含まれる（スクリプトタグがそのまま出力されない）</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-N004</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>enabled=false のチャネルには通知しない</td>
+  <td>Slack チャネルが enabled=false、fetch モック</td>
+  <td><ol class="steps"><li>notifyUnanswered() を呼び出す</li></ol></td>
+  <td>fetch が呼ばれない</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-orgsettings">15. 組織設定</h2>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>前提条件</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-OS001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>GET /api/org/settings が組織設定を返す</td>
+  <td>org_settings が存在</td>
+  <td><ol class="steps"><li>GET /api/org/settings（member）</li></ol></td>
+  <td>brandPrimary, orgName などのフィールドを含む JSON</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-OS002</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>PATCH で部分更新できる</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>PATCH /api/org/settings に {"brandPrimary": "#0ea5e9"}</li></ol></td>
+  <td>200、DB の brandPrimary が更新される</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-OS003</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>不正な brandPrimary 形式で 400</td>
+  <td>admin セッション</td>
+  <td><ol class="steps"><li>PATCH /api/org/settings に {"brandPrimary": "blue"}</li></ol></td>
+  <td>400 VALIDATION_ERROR</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-OS004</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-playwright">Playwright</span></td>
+  <td>管理画面で設定変更後にユーザー画面に反映される</td>
+  <td>admin ログイン済み</td>
+  <td><ol class="steps"><li>/admin/settings でブランドカラーを変更・保存</li><li>ユーザー画面を開く</li></ol></td>
+  <td>ヘッダーやボタンに新しいカラーが反映されている</td>
+  <td><span class="p-mid">中</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="sec-bugs">16. バグ修正確認テスト（2026-05-22 修正分）</h2>
+
+<div class="callout callout-warn">
+  <strong>注:</strong> このセクションのテストは 2026-05-22 に修正した5件のバグの回帰確認用。修正前に失敗し、修正後に通過することを確認する。
+</div>
+
+<table class="tc-table">
+<thead><tr>
+  <th>TC-ID</th><th>観点</th><th>ツール</th><th>テスト項目</th><th>修正箇所</th><th>操作手順</th><th>期待結果</th><th>優先度</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="tc-id">TC-BG001</td>
+  <td><span class="obs-normal">正常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>turnCount が実際の turn 数を返す</td>
+  <td>app/api/threads/route.ts（_count 利用に修正）</td>
+  <td><ol class="steps"><li>3 turn を持つスレッドを作成</li><li>GET /api/threads で turnCount 確認</li></ol></td>
+  <td>items[0].turnCount === 3（修正前は常に 1）</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-BG002</td>
+  <td><span class="obs-error">異常系</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>メール通知 HTML の XSS エスケープ</td>
+  <td>lib/notify.ts（escapeHtml 追加）</td>
+  <td><ol class="steps"><li>question に "&lt;script&gt;x&lt;/script&gt;" を含めて notifyEscalation() 呼出</li><li>生成 HTML を検査</li></ol></td>
+  <td>"&amp;lt;script&amp;gt;" としてエスケープされる</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-BG003</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>管理者 Cookie がユーザー API を通らない</td>
+  <td>lib/session.ts（Cookie を分離）</td>
+  <td><ol class="steps"><li>ob_admin_session のみで GET /api/threads 呼出</li></ol></td>
+  <td>401（修正前は通過していた）</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-BG004</td>
+  <td><span class="obs-auth">権限</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>他組織 FAQ の askedCount が更新されない</td>
+  <td>app/api/threads/route.ts と queries/route.ts（organizationId スコープ追加）</td>
+  <td><ol class="steps"><li>他組織の FAQ id を matchedFaqId として Claude モックが返すように設定</li><li>POST /api/threads 後 DB 確認</li></ol></td>
+  <td>他組織 FAQ の askedCount は変化しない</td>
+  <td><span class="p-high">高</span></td>
+</tr>
+<tr>
+  <td class="tc-id">TC-BG005</td>
+  <td><span class="obs-border">境界値</span></td>
+  <td><span class="t-vitest">Vitest</span></td>
+  <td>generateCode() が 999999 を生成できる</td>
+  <td>lib/passcode.ts（上限を 1000000 に修正）</td>
+  <td><ol class="steps"><li>randomInt をモックして 999999 を強制返却</li><li>generateCode() 呼出</li></ol></td>
+  <td>"999999" が返る（修正前は randomInt の排他的上限により生成されなかった）</td>
+  <td><span class="p-low">低</span></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2>確認事項（仕様未定義・要確認）</h2>
+
+<div class="questions">
+<h3>仕様確認が必要な項目</h3>
+<ul class="q-list">
+  <li>AI に送る会話履歴のターン数上限は何件か？（現状は全件送信。長スレッドでコンテキスト超過の懸念あり）</li>
+  <li>GET /api/threads のカーソルページネーションは (updatedAt, id) の複合カーソルにすべきか？（同タイムスタンプ時の安定性）</li>
+  <li>エスカレーション通知のメール件名に組織名を含めるが、組織名に特殊文字があった場合のエスケープ仕様は？</li>
+  <li>passcode.generateCode() で 999999 が生成されても検証ロジックに問題はないか（6桁チェックは OK）</li>
+  <li>資料アップロード後の S3 保存失敗（LocalStack 未起動時など）はエラー扱いにすべきか、graceful degradation にすべきか（現状は degradation）</li>
+</ul>
+</div>
+
+</div><!-- /page -->
+</body>
+</html>

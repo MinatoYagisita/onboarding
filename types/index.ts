@@ -18,6 +18,7 @@ export const FAQ_CATEGORY_LABELS: Record<FaqCategory, string> = {
 export type Source = {
   title: string;
   section?: string;
+  documentId?: string;
 };
 
 export type Answer = {
@@ -29,9 +30,11 @@ export type Answer = {
   sources: Source[];
 };
 
+export type RelatedFaq = { id: string; question: string };
+
 export type EntryResult =
   | { kind: "answer"; answer: Answer }
-  | { kind: "not-found"; relatedFaqIds: string[] };
+  | { kind: "not-found"; relatedFaqs: RelatedFaq[] };
 
 export type FollowupItem = {
   /** 追加質問を検出するキーワード（部分一致）。最初にマッチしたものが採用される */
@@ -70,6 +73,7 @@ export type ChatThread = {
   pinned: boolean;
   memo: string;
   createdAt: number;
+  firstQuestion?: string;
 };
 
 export type ViewMode = "chat" | "faq";

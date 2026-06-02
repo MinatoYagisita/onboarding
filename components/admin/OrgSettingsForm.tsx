@@ -17,11 +17,27 @@ export function OrgSettingsForm() {
     setSaved(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(draft);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    const res = await fetch("/api/org/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orgName: draft.orgName,
+        productSubtitle: draft.productSubtitle,
+        logoUrl: draft.logoUrl,
+        brandPrimary: draft.brandPrimary,
+        welcomeHeroTitle: draft.welcomeHeroTitle,
+        welcomeHeroDescription: draft.welcomeHeroDescription,
+        askTabLabel: draft.askTabLabel,
+        faqTabLabel: draft.faqTabLabel,
+      }),
+    });
+    if (res.ok) {
+      updateProfile(draft);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    }
   };
 
   const handleReset = () => {

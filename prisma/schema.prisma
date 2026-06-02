@@ -1,0 +1,436 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  member
+  admin
+}
+
+enum ResultKind {
+  answer
+  not_found @map("not-found")
+}
+
+enum Feedback {
+  helpful
+  not_helpful @map("not-helpful")
+}
+
+enum EscalationStatus {
+  pending
+  handled
+  closed
+}
+
+enum NotificationChannelType {
+  slack
+  email
+  teams
+}
+
+enum DriveProvider {
+  google_drive
+  box
+}
+
+// ─────────────────────────────────────────────
+// Organizations
+// ─────────────────────────────────────────────
+
+model Organization {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  settings             OrgSetting?
+  memberships          UserMembership[]
+  categories           Category[]
+  documents            Document[]
+  faqs                 Faq[]
+  driveConnections     DriveConnection[]
+  queryThreads         QueryThread[]
+  queries              Query[]
+  passcodes            Passcode[]
+  authSessions         AuthSession[]
+  authLockouts         AuthLockout[]
+  notificationChannels NotificationChannel[]
+  escalations          Escalation[]
+
+  @@map("organizations")
+}
+
+model OrgSetting {
+  organizationId       String   @id
+  brandPrimary         String   @default("#84cc16")
+  logoUrl              String?
+  orgNameDisplay       String
+  productSubtitle      String   @default("オンボーディング Q&A")
+  welcomeHeroTitle     String   @default("今日は何を知りたいですか？")
+  welcomeHeroDescription String @default("勤怠・服装・店舗ルールまで、組織の資料からAIが答えます。")
+  askTabLabel          String   @default("質問する")
+  faqTabLabel          String   @default("よくある質問")
+  updatedAt            DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("org_settings")
+}
+
+// ─────────────────────────────────────────────
+// Users
+// ─────────────────────────────────────────────
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  displayName String
+  createdAt   DateTime  @default(now())
+  lastLoginAt DateTime?
+  deletedAt   DateTime?
+
+  memberships         UserMembership[]
+  queryThreads        QueryThread[]
+  queries             Query[]
+  passcodes           Passcode[]
+  authSessions        AuthSession[]
+  documents           Document[]
+  escalations         Escalation[]
+  webauthnCredentials WebAuthnCredential[]
+
+  @@map("users")
+}
+
+model UserMembership {
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String
+  role           UserRole
+  joinedAt       DateTime  @default(now())
+  deletedAt      DateTime?
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@map("user_memberships")
+}
+
+// ─────────────────────────────────────────────
+// Categories
+// ─────────────────────────────────────────────
+
+model Category {
+  id             String    @id @default(cuid())
+  organizationId String
+  slug           String
+  name           String
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  faqs         Faq[]
+  queries      Query[]
+
+  @@unique([organizationId, slug])
+  @@map("categories")
+}
+
+// ─────────────────────────────────────────────
+// Documents
+// ─────────────────────────────────────────────
+
+model Document {
+  id                 String    @id @default(cuid())
+  organizationId     String
+  title              String
+  mimeType           String
+  storageKey         String
+  sizeBytes          Int
+  uploadedByUserId   String?
+  uploadedAt         DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  sourceType         String    @default("upload")
+  externalId         String?
+  externalModifiedAt DateTime?
+  content            String?
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  uploadedBy   User?         @relation(fields: [uploadedByUserId], references: [id])
+  faqSources   FaqSource[]
+  querySources QuerySource[]
+
+  @@index([organizationId, uploadedAt(sort: Desc)])
+  @@index([organizationId, externalId])
+  @@map("documents")
+}
+
+// ─────────────────────────────────────────────
+// FAQs
+// ─────────────────────────────────────────────
+
+model Faq {
+  id             String    @id @default(cuid())
+  organizationId String
+  categoryId     String?
+  question       String
+  answer         Json
+  askedCount     Int       @default(0)
+  isPublished    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  category     Category?    @relation(fields: [categoryId], references: [id])
+  sources      FaqSource[]
+  queries      Query[]
+
+  @@index([organizationId, askedCount(sort: Desc)])
+  @@index([organizationId, categoryId])
+  @@map("faqs")
+}
+
+model FaqSource {
+  id         String  @id @default(cuid())
+  faqId      String
+  documentId String
+  section    String?
+  sortOrder  Int     @default(0)
+
+  faq      Faq      @relation(fields: [faqId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@map("faq_sources")
+}
+
+// ─────────────────────────────────────────────
+// Query Threads & Queries
+// ─────────────────────────────────────────────
+
+model QueryThread {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String
+  pinned         Boolean   @default(false)
+  memo           String    @default("")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  queries      Query[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([organizationId, updatedAt(sort: Desc)])
+  @@map("query_threads")
+}
+
+model Query {
+  id             String     @id @default(cuid())
+  threadId       String
+  organizationId String
+  userId         String
+  question       String
+  resultKind     ResultKind
+  answer         Json?
+  relatedFaqIds  Json?
+  matchedFaqId   String?
+  feedback       Feedback?
+  categoryId     String?
+  turnIndex      Int
+  createdAt      DateTime   @default(now())
+  deletedAt      DateTime?
+
+  thread       QueryThread   @relation(fields: [threadId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  matchedFaq   Faq?          @relation(fields: [matchedFaqId], references: [id])
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  sources      QuerySource[]
+  escalations  Escalation[]
+
+  @@unique([threadId, turnIndex])
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([organizationId, resultKind])
+  @@index([matchedFaqId])
+  @@map("queries")
+}
+
+model QuerySource {
+  id         String  @id @default(cuid())
+  queryId    String
+  documentId String
+  section    String?
+  sortOrder  Int     @default(0)
+
+  query    Query    @relation(fields: [queryId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@map("query_sources")
+}
+
+// ─────────────────────────────────────────────
+// Escalations
+// ─────────────────────────────────────────────
+
+model Escalation {
+  id             String           @id @default(cuid())
+  organizationId String
+  queryId        String
+  senderUserId   String
+  message        String
+  status         EscalationStatus @default(pending)
+  sentAt         DateTime         @default(now())
+  handledAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  query        Query        @relation(fields: [queryId], references: [id])
+  sender       User         @relation(fields: [senderUserId], references: [id])
+
+  @@index([organizationId, sentAt(sort: Desc)])
+  @@index([senderUserId, sentAt(sort: Desc)])
+  @@map("escalations")
+}
+
+// ─────────────────────────────────────────────
+// Auth
+// ─────────────────────────────────────────────
+
+model Passcode {
+  id             String    @id @default(cuid())
+  email          String
+  organizationId String
+  codeHash       String
+  expiresAt      DateTime
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation(fields: [email], references: [email])
+
+  @@index([email, organizationId, createdAt(sort: Desc)])
+  @@map("passcodes")
+}
+
+model AuthSession {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  sessionToken   String   @unique
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([userId, expiresAt(sort: Desc)])
+  @@map("auth_sessions")
+}
+
+model AuthLockout {
+  id             String    @id @default(cuid())
+  email          String
+  organizationId String
+  failedCount    Int       @default(0)
+  windowStartedAt DateTime
+  lockedUntil    DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([email, organizationId])
+  @@map("auth_lockouts")
+}
+
+// ─────────────────────────────────────────────
+// Notification Channels
+// ─────────────────────────────────────────────
+
+model NotificationChannel {
+  id             String                  @id @default(cuid())
+  organizationId String
+  type           NotificationChannelType
+  destination    String
+  enabled        Boolean                 @default(true)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("notification_channels")
+}
+
+// ─────────────────────────────────────────────
+// WebAuthn (Passkeys / Biometric)
+// ─────────────────────────────────────────────
+
+model WebAuthnCredential {
+  id             String    @id  // base64url credentialID
+  userId         String
+  webauthnUserId String    // random user handle (base64url)
+  publicKey      Bytes
+  counter        BigInt    @default(0)
+  deviceType     String    @default("singleDevice")
+  backedUp       Boolean   @default(false)
+  transports     String[]
+  name           String?
+  createdAt      DateTime  @default(now())
+  lastUsedAt     DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("webauthn_credentials")
+}
+
+model WebAuthnChallenge {
+  id             String   @id @default(cuid())
+  challenge      String   @unique
+  type           String
+  userId         String?
+  email          String?
+  organizationId String?
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@map("webauthn_challenges")
+}
+
+// ─────────────────────────────────────────────
+// Drive Connections
+// ─────────────────────────────────────────────
+
+model DriveConnection {
+  id                    String        @id @default(cuid())
+  organizationId        String
+  provider              DriveProvider
+  folderId              String?
+  folderName            String?
+  encryptedRefreshToken String
+  syncEnabled           Boolean       @default(true)
+  lastSyncedAt          DateTime?
+  lastSyncError         String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, provider])
+  @@map("drive_connections")
+}

@@ -1,17 +1,43 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { ADMIN_SESSION_COOKIE, SESSION_COOKIE } from "@/lib/authShared";
-
-// Proxy (Next.js 16 で middleware の後継) で、未認証アクセスを /login 系に集約する。
-// 実際の認可はページ／レイアウト側で行う前提（Proxy は optimistic check）。
+import { verifyToken } from "@/lib/tokenSigning";
 
 const FRONTEND_LOGIN = "/login";
 const ADMIN_LOGIN = "/admin/login";
 
-export function proxy(request: NextRequest) {
+function extractOrgSlug(hostname: string): string | null {
+  // {orgSlug}.app.example.com → orgSlug
+  // localhost / localhost:3000 → null（環境変数にフォールバック）
+  if (hostname.startsWith("localhost") || hostname.match(/^\d+\.\d+\.\d+\.\d+/)) {
+    return null;
+  }
+  const parts = hostname.split(".");
+  // サブドメインが1段階だけある場合（sprout.app.example.com → parts[0]）
+  return parts.length >= 3 ? (parts[0] ?? null) : null;
+}
+
+const PUBLIC_API_PREFIXES = [
+  "/api/auth/passcode/",
+  "/api/auth/webauthn/authenticate/",
+  "/api/auth/logout",
+  "/api/auth/mock-login",
+];
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasFrontSession = Boolean(request.cookies.get(SESSION_COOKIE));
-  const hasAdminSession = Boolean(request.cookies.get(ADMIN_SESSION_COOKIE));
+  const hostname = request.headers.get("host") ?? "";
+
+  // 認証不要の公開APIは素通りさせる
+  if (PUBLIC_API_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  // Cookie の存在だけでなく HMAC 署名を検証する
+  const frontToken = request.cookies.get(SESSION_COOKIE)?.value;
+  const adminToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  const hasFrontSession = frontToken ? Boolean(await verifyToken(frontToken)) : false;
+  const hasAdminSession = adminToken ? Boolean(await verifyToken(adminToken)) : false;
 
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const isAdminLogin =
@@ -19,8 +45,18 @@ export function proxy(request: NextRequest) {
   const isFrontendLogin =
     pathname === FRONTEND_LOGIN || pathname.startsWith(`${FRONTEND_LOGIN}/`);
 
+  // サブドメインから組織スラッグを抽出してリクエストヘッダーに付与
+  const orgSlug =
+    extractOrgSlug(hostname) ?? process.env.DEFAULT_ORG_SLUG ?? "";
+
+  const requestHeaders = new Headers(request.headers);
+  if (orgSlug) requestHeaders.set("x-organization-slug", orgSlug);
+
+  function next() {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
   if (isAdminRoute) {
-    // 管理画面は admin cookie 必須。/admin/login のみ例外。
     if (!hasAdminSession && !isAdminLogin) {
       const url = request.nextUrl.clone();
       url.pathname = ADMIN_LOGIN;
@@ -31,10 +67,9 @@ export function proxy(request: NextRequest) {
       url.pathname = "/admin";
       return NextResponse.redirect(url);
     }
-    return NextResponse.next();
+    return next();
   }
 
-  // ユーザーフロント側
   if (!hasFrontSession && !isFrontendLogin) {
     const url = request.nextUrl.clone();
     url.pathname = FRONTEND_LOGIN;
@@ -46,12 +81,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return next();
 }
 
 export const config = {
   matcher: [
-    // 静的アセットと Next 内部パスは除外する。
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|jpg|jpeg|gif|ico|webp)$).*)",
   ],
 };

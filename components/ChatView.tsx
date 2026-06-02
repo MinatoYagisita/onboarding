@@ -12,6 +12,7 @@ type Props = {
   onSubmit: (question: string) => void;
   onFeedback: (turnId: string, value: "helpful" | "not-helpful") => void;
   onUpdateMemo: (memo: string) => void;
+  isSubmitting?: boolean;
 };
 
 export function ChatView({
@@ -19,6 +20,7 @@ export function ChatView({
   onSubmit,
   onFeedback,
   onUpdateMemo,
+  isSubmitting,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -45,11 +47,11 @@ export function ChatView({
               {turn.result.kind === "not-found" ? (
                 <NoAnswerCard
                   turn={turn}
-                  relatedFaqIds={turn.result.relatedFaqIds}
                   onPickFaq={onSubmit}
                 />
               ) : (
                 <AnswerCard
+                  threadId={thread.id}
                   turn={turn}
                   answer={turn.result.answer}
                   onFeedback={(v) => onFeedback(turn.id, v)}
@@ -62,7 +64,7 @@ export function ChatView({
         </div>
       </div>
 
-      <ChatInput onSubmit={onSubmit} followup />
+      <ChatInput onSubmit={onSubmit} followup disabled={isSubmitting} />
     </div>
   );
 }

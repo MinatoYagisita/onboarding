@@ -14,6 +14,7 @@ type Props = {
   onSelectThread: (id: string) => void;
   onNewChat: () => void;
   onTogglePin: (id: string) => void;
+  onDeleteThread: (id: string) => void;
   onChangeView: (view: ViewMode) => void;
 };
 
@@ -24,6 +25,7 @@ export function Sidebar({
   onSelectThread,
   onNewChat,
   onTogglePin,
+  onDeleteThread,
   onChangeView,
 }: Props) {
   const { profile } = useOrg();
@@ -79,6 +81,7 @@ export function Sidebar({
                 active={thread.id === activeThreadId && viewMode === "chat"}
                 onSelect={() => onSelectThread(thread.id)}
                 onTogglePin={() => onTogglePin(thread.id)}
+                onDelete={() => onDeleteThread(thread.id)}
               />
             ))}
           </Section>
@@ -97,6 +100,7 @@ export function Sidebar({
                 active={thread.id === activeThreadId && viewMode === "chat"}
                 onSelect={() => onSelectThread(thread.id)}
                 onTogglePin={() => onTogglePin(thread.id)}
+                onDelete={() => onDeleteThread(thread.id)}
               />
             ))
           )}
@@ -107,6 +111,13 @@ export function Sidebar({
         <div className="flex-1">
           <LogoutButton />
         </div>
+        <Link
+          href="/settings"
+          className="shrink-0 rounded px-2 py-1 text-[10px] text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          title="設定"
+        >
+          設定
+        </Link>
         <Link
           href="/admin"
           className="shrink-0 rounded px-2 py-1 text-[10px] text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -169,14 +180,15 @@ function HistoryItem({
   active,
   onSelect,
   onTogglePin,
+  onDelete,
 }: {
   thread: ChatThread;
   active: boolean;
   onSelect: () => void;
   onTogglePin: () => void;
+  onDelete: () => void;
 }) {
-  // スレッドのタイトルは最初の質問を採用。
-  const title = thread.turns[0]?.question ?? "（質問なし）";
+  const title = thread.turns[0]?.question || thread.firstQuestion || "（質問なし）";
   const turnCount = thread.turns.length;
 
   return (
@@ -219,6 +231,15 @@ function HistoryItem({
         }
       >
         {thread.pinned ? "★" : "☆"}
+      </button>
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label="削除"
+        title="会話を削除"
+        className="shrink-0 rounded p-1 text-xs text-gray-400 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+      >
+        ✕
       </button>
     </div>
   );

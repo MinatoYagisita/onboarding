@@ -5,12 +5,13 @@ import type { Answer, ChatTurn } from "@/types";
 import { EscalationDialog } from "./EscalationDialog";
 
 type Props = {
+  threadId: string;
   turn: ChatTurn;
   answer: Answer;
   onFeedback: (value: "helpful" | "not-helpful") => void;
 };
 
-export function AnswerCard({ turn, answer, onFeedback }: Props) {
+export function AnswerCard({ threadId, turn, answer, onFeedback }: Props) {
   const [escalationOpen, setEscalationOpen] = useState(false);
 
   return (
@@ -84,6 +85,8 @@ export function AnswerCard({ turn, answer, onFeedback }: Props) {
 
       {escalationOpen && (
         <EscalationDialog
+          threadId={threadId}
+          queryId={turn.id}
           originalQuestion={turn.question}
           contact={answer.contact}
           onClose={() => setEscalationOpen(false)}

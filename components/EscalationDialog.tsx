@@ -3,15 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 
 type Props = {
+  threadId: string;
+  queryId: string;
   originalQuestion: string;
   contact: string;
   onClose: () => void;
 };
 
-type Stage = "compose" | "confirm" | "sent";
+type Stage = "compose" | "confirm" | "sent" | "error";
 
-export function EscalationDialog({ originalQuestion, contact, onClose }: Props) {
+export function EscalationDialog({ threadId, queryId, originalQuestion, contact, onClose }: Props) {
   const [stage, setStage] = useState<Stage>("compose");
+  const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState("");
   const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -134,16 +137,50 @@ export function EscalationDialog({ originalQuestion, contact, onClose }: Props) 
               <button
                 type="button"
                 onClick={() => setStage("compose")}
-                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                disabled={isSending}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
               >
                 戻る
               </button>
               <button
                 type="button"
-                onClick={() => setStage("sent")}
-                className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                disabled={isSending}
+                onClick={async () => {
+                  setIsSending(true);
+                  try {
+                    const res = await fetch(
+                      `/api/threads/${threadId}/queries/${queryId}/escalations`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message }),
+                      }
+                    );
+                    setStage(res.ok ? "sent" : "error");
+                  } catch {
+                    setStage("error");
+                  } finally {
+                    setIsSending(false);
+                  }
+                }}
+                className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
               >
-                この内容で送る
+                {isSending ? "送信中..." : "この内容で送る"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {stage === "error" && (
+          <div className="p-6">
+            <h2 className="text-base font-semibold text-red-700">送信に失敗しました</h2>
+            <p className="mt-2 text-sm text-gray-700">もう一度お試しください。</p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setStage("confirm")} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                戻る
+              </button>
+              <button type="button" onClick={onClose} className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                閉じる
               </button>
             </div>
           </div>
@@ -155,7 +192,7 @@ export function EscalationDialog({ originalQuestion, contact, onClose }: Props) 
               担当者に送信しました
             </h2>
             <p className="mt-2 text-sm text-gray-700">
-              返信があるまでお待ちください。履歴からも内容を確認できます。
+              担当者から連絡があるまでしばらくお待ちください。
             </p>
             <div className="mt-6 flex justify-end">
               <button

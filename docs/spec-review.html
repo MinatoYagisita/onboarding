@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>仕様確認資料 — オンボーディング Q&A システム</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background: #f5f6fa;
+      color: #222;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    /* ── ヘッダー ── */
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 40px 48px 36px;
+    }
+    header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+    header p  { font-size: 14px; opacity: 0.7; }
+
+    /* ── ナビ ── */
+    nav {
+      background: #fff;
+      border-bottom: 1px solid #e2e6ea;
+      padding: 0 48px;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    nav a {
+      display: block;
+      padding: 14px 20px;
+      font-size: 13px;
+      color: #555;
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    nav a:hover { color: #1a1a2e; border-bottom-color: #aaa; }
+
+    /* ── 本文 ── */
+    main { max-width: 900px; margin: 40px auto; padding: 0 24px 80px; }
+
+    section { margin-bottom: 56px; }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #1a1a2e;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 24px 0 12px;
+      color: #1a1a2e;
+    }
+    p { margin-bottom: 12px; }
+    ul, ol { margin: 0 0 12px 22px; }
+    li { margin-bottom: 6px; }
+
+    /* ── カード ── */
+    .card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    /* ── ステータスバッジ ── */
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .badge-done  { background: #d4edda; color: #155724; }
+    .badge-mock  { background: #fff3cd; color: #856404; }
+    .badge-none  { background: #f8d7da; color: #721c24; }
+    .badge-decide { background: #cce5ff; color: #004085; }
+
+    /* ── フロー図（ステップ） ── */
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+      border-left: 3px solid #e2e6ea;
+      padding-left: 20px;
+      margin-left: 20px;
+      position: relative;
+    }
+    .step:last-child { border-left-color: transparent; }
+    .step-num {
+      position: absolute;
+      left: -17px;
+      top: 16px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #1a1a2e;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-body { flex: 1; }
+    .step-title { font-weight: 700; margin-bottom: 4px; }
+
+    /* ── テーブル ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    th {
+      background: #f0f2f5;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 700;
+      border: 1px solid #dde3ea;
+    }
+    td {
+      padding: 10px 14px;
+      border: 1px solid #dde3ea;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #fafbfc; }
+
+    /* ── コールアウト ── */
+    .callout {
+      border-left: 4px solid;
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .callout-blue   { border-color: #3498db; background: #eaf4fb; }
+    .callout-yellow { border-color: #f39c12; background: #fef9ec; }
+    .callout-red    { border-color: #e74c3c; background: #fdf3f2; }
+    .callout-green  { border-color: #27ae60; background: #eafaf1; }
+    .callout-title  { font-weight: 700; margin-bottom: 6px; }
+
+    /* ── 2カラム ── */
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .cols { grid-template-columns: 1fr; } }
+
+    /* ── 未決定リスト ── */
+    .decide-item {
+      background: #fff;
+      border: 1px solid #b8d4f0;
+      border-left: 4px solid #3498db;
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+    .decide-item .q { font-weight: 700; margin-bottom: 6px; }
+    .decide-item .context { font-size: 13px; color: #555; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>仕様確認資料</h1>
+  <p>オンボーディング Q&amp;A システム　— 非エンジニア向け説明書　（2026-05-21 版）</p>
+</header>
+
+<nav>
+  <a href="#overview">① システム概要</a>
+  <a href="#users">② 利用者と役割</a>
+  <a href="#user-flow">③ ユーザーの使い方</a>
+  <a href="#admin-flow">④ 管理者の機能</a>
+  <a href="#ai">⑤ AI 検索の仕組み</a>
+  <a href="#auth">⑥ ログイン・認証</a>
+  <a href="#status">⑦ 現在の開発状況</a>
+  <a href="#decisions">⑧ 未決定事項（要確認）</a>
+</nav>
+
+<main>
+
+<!-- ① システム概要 -->
+<section id="overview">
+  <h2>① システム概要</h2>
+
+  <p>
+    このシステムは、<strong>新入社員やアルバイトが会社の資料をもとに質問できる社内 Q&amp;A ツール</strong>です。
+    入社直後に「有給はいつ付与されるの？」「休憩は何分取れる？」といった疑問を、
+    上司や先輩に毎回聞かなくても、チャット画面から自然な言葉で質問すると AI が答えを返してくれます。
+  </p>
+
+  <div class="cols">
+    <div class="card">
+      <div class="card-title">解決したい課題</div>
+      <ul>
+        <li>新人が毎回同じ質問を上司・先輩に聞く手間を減らす</li>
+        <li>社内規程・マニュアルを自分で探す時間を省く</li>
+        <li>「聞きにくい」と我慢してしまう状況をなくす</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">どんな会社向けか</div>
+      <ul>
+        <li>AI やシステムに詳しくない会社でも導入できる</li>
+        <li>業種は問わない（飲食・小売・オフィス系など）</li>
+        <li>複数の企業が同じシステムを使う（マルチテナント）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">マルチテナントとは？</div>
+    一つのシステムを複数の会社が使い回す仕組みです。
+    A 社の従業員には A 社の資料だけ、B 社には B 社の資料だけが見える設計になっています。
+    会社ごとに URLが異なります（例：<code>sprout.app.example.com</code>）。
+  </div>
+</section>
+
+<!-- ② 利用者と役割 -->
+<section id="users">
+  <h2>② 利用者と役割</h2>
+
+  <div class="cols">
+    <div class="card">
+      <div class="card-title">👤 一般ユーザー（社員・アルバイト）</div>
+      <ul>
+        <li>質問を送る・回答を読む</li>
+        <li>過去の質問履歴を見る</li>
+        <li>担当者への相談を申し込む</li>
+        <li>よくある質問（FAQ）を閲覧する</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">🔧 管理者（バックオフィス担当）</div>
+      <ul>
+        <li>会社の資料（マニュアル・規程）をアップロードする</li>
+        <li>FAQ を作成・編集する</li>
+        <li>「回答できなかった質問」を確認する</li>
+        <li>通知設定（Slack など）を管理する</li>
+        <li>画面の色・ロゴ・文言をカスタマイズする</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-yellow">
+    <div class="callout-title">注意：管理者 ≠ システム全体の管理者</div>
+    ここでいう「管理者」は、各企業（テナント）の担当者です。
+    GrowDays 側のスーパー管理者については現在の仕様書に詳細が記載されていません（⑧ 参照）。
+  </div>
+</section>
+
+<!-- ③ ユーザーの使い方 -->
+<section id="user-flow">
+  <h2>③ ユーザーの使い方（一般社員・アルバイト）</h2>
+
+  <h3>質問から回答まで</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">ログイン</div>
+        メールアドレスを入力すると、6桁のコードがメールに届く。そのコードを画面に入力するとログイン完了。パスワードは不要。
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">チャット画面で質問を入力</div>
+        「休憩は何分取れますか？」など、普通の言葉で入力する。Enter キーは改行、Command+Enter（または Ctrl+Enter）で送信。
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">AI が資料を検索して回答を返す</div>
+        数秒で「結論 → 根拠 → 補足 → 注意点 → 相談先」の順で回答が表示される。出典の資料名も一緒に表示される。
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">追加質問・フィードバック</div>
+        回答に続けて別の質問もできる（会話形式）。「役に立った / 役に立たなかった」のボタンで評価できる。
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">回答が見つからなかった場合</div>
+        「回答が見つかりませんでした」と表示される。関連する FAQ が提示される。
+        担当者への相談申し込みボタンが表示される。
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-title">担当者への相談（エスカレーション）</div>
+        「担当者に送る」ボタンを押すと、質問を編集して送信できる。送信前に確認ダイアログが表示される。
+        送った後は管理者が内容を確認して、各社の運用フロー（電話・メール等）で返答する。
+      </div>
+    </div>
+  </div>
+
+  <h3>その他の機能</h3>
+  <div class="cols">
+    <div class="card">
+      <div class="card-title">過去の質問を振り返る</div>
+      左側のサイドバーに今まで聞いた質問の一覧が出る。
+      よく見る質問はピン留めできる。
+      自分用のメモも残せる。
+    </div>
+    <div class="card">
+      <div class="card-title">よくある質問（FAQ）タブ</div>
+      管理者が用意した FAQ や、実際によく聞かれた質問のランキングを閲覧できる。
+      カテゴリ（勤怠・服装・有給など）で絞り込み可能。
+    </div>
+  </div>
+</section>
+
+<!-- ④ 管理者の機能 -->
+<section id="admin-flow">
+  <h2>④ 管理者の機能</h2>
+
+  <table>
+    <thead>
+      <tr><th>機能</th><th>内容</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ダッシュボード</td>
+        <td>質問数の推移・回答できなかった割合などの概況を確認できる</td>
+      </tr>
+      <tr>
+        <td>資料アップロード</td>
+        <td>PDF・Word・Excel などの社内資料を登録する。AI はこの資料の内容をもとに回答する</td>
+      </tr>
+      <tr>
+        <td>FAQ 管理</td>
+        <td>よくある質問と答えを手動で作成・編集できる。公開 / 下書きの切り替えも可能</td>
+      </tr>
+      <tr>
+        <td>カテゴリ管理</td>
+        <td>「入社初日に多い質問」「勤怠・シフト」などのカテゴリを作成・編集できる</td>
+      </tr>
+      <tr>
+        <td>未回答一覧</td>
+        <td>AI が答えられなかった質問の一覧。どんな資料が不足しているかの参考になる</td>
+      </tr>
+      <tr>
+        <td>質問ランキング</td>
+        <td>よく聞かれた質問の上位一覧。FAQ や資料の充実化の優先度判断に使う</td>
+      </tr>
+      <tr>
+        <td>通知設定</td>
+        <td>AI が答えられなかったとき、Slack 等に通知を飛ばす設定ができる</td>
+      </tr>
+      <tr>
+        <td>組織設定</td>
+        <td>画面のブランドカラー・ロゴ画像・各種テキストをカスタマイズできる</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-yellow">
+    <div class="callout-title">エスカレーション（担当者への相談）の管理について</div>
+    ユーザーが「担当者に送る」を押すと通知が届くところまでをシステムが担当します。
+    その後の対応（本人への連絡・返答）は各組織の担当者が通常の連絡手段（電話・メール等）で行います。
+    「システム内でやり取りを続ける」機能は現在の設計には含まれていません。
+  </div>
+</section>
+
+<!-- ⑤ AI 検索の仕組み -->
+<section id="ai">
+  <h2>⑤ AI 検索の仕組み（平易な言葉で）</h2>
+
+  <h3>何をしているか</h3>
+  <p>
+    ユーザーが質問を送ると、システムは管理者がアップロードした資料の全内容と質問をまとめて AI（Claude）に渡します。
+    AI は「この資料の中に答えがありますか？あればどこですか？」を判断して、答えと出典を返します。
+  </p>
+
+  <div class="callout callout-green">
+    <div class="callout-title">「検索」ではなく「読解」</div>
+    キーワード検索（Google のように単語を探す）と違い、AI は資料の意味を理解して回答します。
+    「休憩」というキーワードが本文になくても、「インターバル」「休憩時間の扱い」という記述から答えを導けます。
+  </div>
+
+  <h3>回答が見つからないとき</h3>
+  <p>
+    資料の中に該当する内容がない場合、AI は「回答が見つかりませんでした」と正直に返答します。
+    「なんとなく答える」ような動作はしない設計です（資料にない情報で回答させない）。
+  </p>
+
+  <h3>資料のセキュリティ</h3>
+  <div class="card">
+    <div class="card-title">データの分離</div>
+    A 社がアップロードした資料は B 社には絶対に見えません。
+    会社ごとに完全に分離された領域で管理されます。
+    AI に資料を渡すときも、その会社の資料のみが対象になります。
+  </div>
+
+  <div class="callout callout-yellow">
+    <div class="callout-title">資料が多くなった場合（将来の話）</div>
+    現在の設計では資料の全内容を AI に渡す方式です（処理速度が速く、シンプル）。
+    将来、資料が非常に大量になった場合は「ベクトル検索」という技術に切り替えることができます。
+    これは AI に渡す前に関連しそうな部分だけを先に絞り込む方法で、現時点では不要です。
+  </div>
+</section>
+
+<!-- ⑥ ログイン・認証 -->
+<section id="auth">
+  <h2>⑥ ログイン・認証の仕組み</h2>
+
+  <h3>一般ユーザーのログイン</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">メールアドレスを入力</div>
+        会社のメールアドレスを入力する。パスワードは不要。
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">メールに 6桁コードが届く</div>
+        数秒〜1分以内にコードが届く。有効期限は 10分間。
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">コードを入力してログイン完了</div>
+        コードが正しければセッションが発行される。次回は再びメールで認証する。
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">なぜパスワードなしか？</div>
+    パスワードは「忘れる」「使い回す」「流出する」リスクがあります。
+    メールアドレスに毎回コードを送る方式にすることで、管理の手間なく安全にログインできます。
+    これを「パスコード認証」と呼びます。
+  </div>
+
+  <h3>管理者のログイン</h3>
+  <p>
+    管理画面（<code>/admin/login</code>）への入り口は別になっています。
+    認証方法は一般ユーザーと同じパスコード認証（メールアドレス + 6桁コード）です。
+    パスキー（生体認証 / WebAuthn）もオプションで利用可能です。
+  </p>
+
+  <h3>ログアウト・セッション管理</h3>
+  <p>
+    ログイン状態はサーバー側のデータベースで管理します。
+    ブラウザを閉じても一定期間はログイン状態が保たれます。
+    管理者がセッションを強制的に無効化することも可能です。
+  </p>
+</section>
+
+<!-- ⑦ 現在の開発状況 -->
+<section id="status">
+  <h2>⑦ 現在の開発状況</h2>
+
+  <div class="callout callout-green">
+    <div class="callout-title">実動作するシステム（2026-05-21 時点）</div>
+    データベース・AI API・認証・通知などの主要機能は実装済みで実際に動作しています。
+    未完了はランキング API 接続・ファイルストレージ（S3）接続・マルチテナント DNS 設定のみです。
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>機能</th><th>状態</th><th>内容</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>チャット画面（質問・回答表示）</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>AI API 接続済み。リロード後も履歴が残る（DB 永続化）</td>
+      </tr>
+      <tr>
+        <td>FAQ 一覧・カテゴリ絞り込み</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>API 接続済み。DB のデータをリアルタイムで表示</td>
+      </tr>
+      <tr>
+        <td>サイドバー（スレッド一覧・ピン留め・削除）</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>DB 保存済み。ピン留め・自分用メモ・論理削除対応</td>
+      </tr>
+      <tr>
+        <td>フィードバック（役に立った / 立たなかった）</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>API 保存済み。精度改善データとして蓄積</td>
+      </tr>
+      <tr>
+        <td>担当者への相談（エスカレーション）</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>3ステップ UI + API 送信済み。Slack・メール通知が届く</td>
+      </tr>
+      <tr>
+        <td>管理画面（資料・FAQ・カテゴリ・未回答・相談一覧）</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>全 CRUD API 接続済み。データは DB に保存される</td>
+      </tr>
+      <tr>
+        <td>ユーザー管理（管理画面）</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>ユーザー追加・削除・ロール変更。招待時にパスコードをメール送付</td>
+      </tr>
+      <tr>
+        <td>認証（パスコード + パスキー）</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>メール + 6桁パスコード認証。オプションでパスキー（生体認証）利用可能</td>
+      </tr>
+      <tr>
+        <td>Slack 通知・メール通知</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>エスカレーション・未回答発生時に Slack Block Kit 形式 + Resend メールで通知</td>
+      </tr>
+      <tr>
+        <td>Google Drive / Box 連携</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>OAuth フロー・同期ロジック実装済み。管理画面から接続・フォルダ指定・手動同期可能</td>
+      </tr>
+      <tr>
+        <td>組織設定（色・ロゴ・文言）</td>
+        <td><span class="badge badge-done">完了</span></td>
+        <td>管理画面から変更すると即座に画面に反映される</td>
+      </tr>
+      <tr>
+        <td>質問ランキング（管理画面）</td>
+        <td><span class="badge badge-mock">UI のみ</span></td>
+        <td>管理画面のグラフは表示されるが、実データとの接続が未完了</td>
+      </tr>
+      <tr>
+        <td>ファイルストレージ（S3）</td>
+        <td><span class="badge badge-mock">未接続</span></td>
+        <td>テキスト抽出後 DB に保存。本番は S3 + KMS 暗号化が必要</td>
+      </tr>
+      <tr>
+        <td>マルチテナント（サブドメイン）</td>
+        <td><span class="badge badge-mock">DNS 未設定</span></td>
+        <td>コードは対応済み。本番は DNS 設定（<code>{orgSlug}.app.example.com</code>）が必要</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>残りの対応事項（エンジニア向け参考）</h3>
+  <ol>
+    <li>ランキング API 接続 — <code>GET /api/admin/ranking</code> を管理画面に繋ぐ</li>
+    <li>ファイルストレージ（S3）接続 — アップロードされた資料をオブジェクトストレージに保管</li>
+    <li>マルチテナント（DNS・サブドメイン設定） — 本番環境の DNS 設定のみ未完了</li>
+  </ol>
+</section>
+
+<!-- ⑧ 未決定事項 -->
+<section id="decisions">
+  <h2>⑧ 未決定事項（確認・決定が必要な項目）</h2>
+
+  <p>以下は仕様書の中でまだビジネス判断が必要な項目です。技術的な実装はほぼ完了しています。</p>
+
+  <div class="decide-item">
+    <div class="q"><span class="badge badge-decide">要決定</span> GrowDays 側の管理ツールは必要か？</div>
+    <div class="context">
+      全企業（テナント）を横断して管理するための画面（スーパー管理者機能）の仕様が未記載です。<br>
+      現在は各企業の管理者が自社の設定のみを管理できます。GrowDays スタッフが全テナントを俯瞰する機能が MVP に必要かどうかの判断が必要です。
+    </div>
+  </div>
+
+  <div class="decide-item">
+    <div class="q"><span class="badge badge-decide">要決定</span> 資料の保管場所・セキュリティ方針</div>
+    <div class="context">
+      管理者がアップロードした PDF 等を GrowDays の AWS S3 に保管する設計になっています。<br>
+      「うちの資料を他社のサーバーに置くのが不安」という顧客が出た場合の対応方針（説明・代替案）を決める必要があります。
+    </div>
+  </div>
+
+  <div class="decide-item">
+    <div class="q"><span class="badge badge-decide">要決定</span> ログイン画面への会社ロゴ・色の表示</div>
+    <div class="context">
+      ログイン画面は会社ごとのロゴや色を表示する予定ですが、ログイン前なのでデータを取得できない問題があります。<br>
+      選択肢：① ログイン前でも取得できる専用 API を追加する（<code>/api/org/public-settings?slug=sprout</code> 等）　② ログイン画面はブランディングなしで統一する
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">決定済みの事項（実装完了）</div>
+    <ul>
+      <li>管理者のログイン方法 → パスコード認証（一般ユーザーと同じ方式）+ オプションでパスキー</li>
+      <li>ユーザー登録 → 管理者が招待（管理画面からメールアドレスを追加し、パスコードを自動送付）</li>
+      <li>エスカレーション通知先 → Slack + メールの両方に対応（<code>notification_channels</code> テーブルで設定）</li>
+      <li>FAQ ランキングの集計 → AI が返す <code>matchedFaqId</code> で <code>asked_count</code> を +1</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+</body>
+</html>

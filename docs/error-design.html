@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>エラー設計書 — オンボーディングシステム</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Noto Sans JP", "Hiragino Sans", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 48px 24px 100px;
+    }
+
+    h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #64748b; margin-bottom: 48px; }
+
+    h2 {
+      font-size: 17px; font-weight: 700; color: #0f172a;
+      margin: 48px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    h3 { font-size: 14px; font-weight: 600; color: #334155; margin: 24px 0 10px; }
+
+    p { margin-bottom: 12px; color: #475569; }
+
+    /* ── toc ── */
+    .toc {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 48px;
+    }
+    .toc-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+    .toc ol { padding-left: 18px; }
+    .toc li { margin-bottom: 4px; }
+    .toc a { color: #3b82f6; text-decoration: none; font-size: 13px; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: ui-monospace, monospace;
+      white-space: nowrap;
+    }
+    .badge-400 { background: #fef9c3; color: #854d0e; }
+    .badge-401 { background: #fee2e2; color: #991b1b; }
+    .badge-403 { background: #fed7aa; color: #9a3412; }
+    .badge-404 { background: #e0e7ff; color: #3730a3; }
+    .badge-409 { background: #fce7f3; color: #9d174d; }
+    .badge-429 { background: #f3e8ff; color: #6b21a8; }
+    .badge-500 { background: #f1f5f9; color: #475569; }
+    .badge-502 { background: #fef3c7; color: #92400e; }
+    .badge-503 { background: #ecfdf5; color: #065f46; }
+    .badge-class { background: #eff6ff; color: #1e40af; }
+
+    /* ── table ── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    thead th { background: #f1f5f9; text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #e2e8f0; }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f8fafc; }
+
+    code { font-family: ui-monospace, "Cascadia Code", monospace; font-size: 12px; background: #f1f5f9; padding: 1px 5px; border-radius: 3px; color: #0f172a; }
+
+    /* ── code block ── */
+    pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 16px 20px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; margin-bottom: 16px; }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+    .kw  { color: #7dd3fc; }
+    .str { color: #86efac; }
+    .num { color: #fbbf24; }
+    .cm  { color: #64748b; font-style: italic; }
+    .fn  { color: #c084fc; }
+    .cls { color: #f472b6; }
+
+    /* ── flow ── */
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 12px 0 20px; }
+    .flow-box { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 500; color: #334155; white-space: nowrap; }
+    .flow-box.red    { border-color: #fca5a5; background: #fff1f2; color: #991b1b; }
+    .flow-box.amber  { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
+    .flow-box.green  { border-color: #6ee7b7; background: #f0fdf4; color: #065f46; }
+    .flow-box.blue   { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
+    .flow-box.purple { border-color: #c4b5fd; background: #f5f3ff; color: #5b21b6; }
+    .flow-arrow { padding: 0 8px; color: #94a3b8; font-size: 18px; }
+
+    /* ── callout ── */
+    .callout { border-left: 4px solid; border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 16px 0; font-size: 13px; }
+    .callout-warn   { border-color: #f59e0b; background: #fffbeb; color: #78350f; }
+    .callout-info   { border-color: #3b82f6; background: #eff6ff; color: #1e3a8a; }
+    .callout-danger { border-color: #ef4444; background: #fff1f2; color: #7f1d1d; }
+    .callout-ok     { border-color: #10b981; background: #f0fdf4; color: #064e3b; }
+    .callout strong { display: block; margin-bottom: 4px; font-size: 13px; }
+
+    /* ── card ── */
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; }
+    .card-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 10px; }
+    ul.list { padding-left: 18px; color: #475569; }
+    ul.list li { margin-bottom: 6px; }
+
+    /* ── class hierarchy ── */
+    .hierarchy { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px; margin-bottom: 24px; }
+    .hier-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13px; }
+    .hier-row:last-child { margin-bottom: 0; }
+    .hier-indent { padding-left: 28px; border-left: 2px solid #e2e8f0; margin-left: 14px; }
+    .hier-name { font-family: ui-monospace, monospace; font-weight: 700; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 5px; padding: 2px 8px; font-size: 12px; }
+    .hier-desc { color: #64748b; font-size: 12px; }
+    .hier-badge { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
+    .hier-503 { background: #d1fae5; color: #065f46; }
+    .hier-502 { background: #fef3c7; color: #92400e; }
+
+    /* ── sensitive key grid ── */
+    .key-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin-bottom: 16px; }
+    .key-chip { background: #fff1f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 10px; font-family: ui-monospace, monospace; font-size: 12px; color: #991b1b; }
+
+    /* ── two-col ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+
+    .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+    .tag-impl { background: #dbeafe; color: #1e40af; }
+    .tag-todo { background: #fef9c3; color: #854d0e; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>エラー設計書</h1>
+  <p class="subtitle">オンボーディングシステム — 2026-05-21 更新</p>
+
+  <!-- 目次 -->
+  <div class="toc">
+    <div class="toc-title">目次</div>
+    <ol>
+      <li><a href="#s1">エラーコード一覧（API 仕様）</a></li>
+      <li><a href="#s2">レスポンス形式</a></li>
+      <li><a href="#s3">例外クラス階層（実装）</a></li>
+      <li><a href="#s4">エラー境界（errorBoundary）の仕組み</a></li>
+      <li><a href="#s5">構造化ログ・PII サニタイズ</a></li>
+      <li><a href="#s6">401 と 403 の使い分け</a></li>
+      <li><a href="#s7">401 受信時のクライアント挙動</a></li>
+      <li><a href="#s8">AI 障害時の挙動（AiUnavailableError）</a></li>
+      <li><a href="#s9">ファイルアップロードのエラー</a></li>
+      <li><a href="#s10">レートリミット一覧</a></li>
+      <li><a href="#s11">500 エラーの情報漏洩防止ルール</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ===== 1. エラーコード一覧 ===== -->
+  <h2 id="s1">1. エラーコード一覧（API 仕様）</h2>
+
+  <table>
+    <thead>
+      <tr><th>HTTP</th><th>code</th><th>説明</th><th>発生例</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-400">400</span></td>
+        <td><code>VALIDATION_ERROR</code></td>
+        <td>入力値が不正（details.errors に詳細）</td>
+        <td>必須フィールドが空、形式エラー</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-400">400</span></td>
+        <td><code>PASSCODE_EXPIRED</code></td>
+        <td>パスコードの有効期限切れ（10分）</td>
+        <td>期限後に verify を試みた</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-400">400</span></td>
+        <td><code>FILE_TOO_LARGE</code></td>
+        <td>アップロードファイルが 2MB 超</td>
+        <td>資料アップロード</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-400">400</span></td>
+        <td><code>UNSUPPORTED_FILE_TYPE</code></td>
+        <td>非対応ファイル形式（PDF / TXT 以外）</td>
+        <td>Word / Excel のアップロード</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-401">401</span></td>
+        <td><code>UNAUTHENTICATED</code></td>
+        <td>未認証 / セッション期限切れ</td>
+        <td>Cookie なし、パスコード不一致</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-403">403</span></td>
+        <td><code>FORBIDDEN</code></td>
+        <td>認証済みだが権限不足</td>
+        <td>member が <code>/admin/*</code> にアクセス</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-404">404</span></td>
+        <td><code>NOT_FOUND</code></td>
+        <td>リソース未存在（論理削除済みも含む）</td>
+        <td>存在しない FAQ ID、削除済みスレッド</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-409">409</span></td>
+        <td><code>CONFLICT</code></td>
+        <td>重複・競合</td>
+        <td>同名カテゴリ slug の作成</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-409">409</span></td>
+        <td><code>PASSCODE_ALREADY_USED</code></td>
+        <td>検証済みパスコードの再利用</td>
+        <td>verify 済みコードで再度 verify</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-429">429</span></td>
+        <td><code>RATE_LIMITED</code></td>
+        <td>レート制限超過</td>
+        <td>質問 10 req/分超、パスコード 5 req/時間超</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-500">500</span></td>
+        <td><code>INTERNAL_ERROR</code></td>
+        <td>サーバー内部エラー（詳細はログのみ）</td>
+        <td>予期しない例外、Zod バリデーション失敗</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-502">502</span></td>
+        <td><code>STORAGE_ERROR</code></td>
+        <td>外部ストレージ（Drive / Box）の操作失敗</td>
+        <td>OAuth トークン失効、フォルダが削除された</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-503">503</span></td>
+        <td><code>AI_UNAVAILABLE</code></td>
+        <td>AI API（Groq / Anthropic）の障害・タイムアウト</td>
+        <td>質問送信時に AI API が 3 回リトライ後も失敗</td>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <!-- ===== 2. レスポンス形式 ===== -->
+  <h2 id="s2">2. レスポンス形式</h2>
+
+  <h3>標準エラー（4xx）</h3>
+  <pre><code><span class="kw">{</span>
+  <span class="str">"error"</span>: <span class="kw">{</span>
+    <span class="str">"code"</span>:    <span class="str">"VALIDATION_ERROR"</span>,
+    <span class="str">"message"</span>: <span class="str">"入力内容に誤りがあります"</span>,
+    <span class="str">"details"</span>: <span class="kw">{</span>
+      <span class="str">"errors"</span>: <span class="kw">[</span>
+        <span class="kw">{</span> <span class="str">"field"</span>: <span class="str">"question"</span>,   <span class="str">"message"</span>: <span class="str">"空文字列にできません"</span> <span class="kw">}</span>,
+        <span class="kw">{</span> <span class="str">"field"</span>: <span class="str">"categoryId"</span>, <span class="str">"message"</span>: <span class="str">"存在しないカテゴリIDです"</span> <span class="kw">}</span>
+      <span class="kw">]</span>
+    <span class="kw">}</span>  <span class="cm">// details は VALIDATION_ERROR のみ付く</span>
+  <span class="kw">}</span>
+<span class="kw">}</span></code></pre>
+
+  <div class="callout callout-warn">
+    <strong>⚠ details.errors は常に配列</strong>
+    単一フィールドのエラーでも必ず配列で返す。クライアント側のパース処理を統一するため。
+  </div>
+
+  <h3>429 レートリミット</h3>
+  <pre><code><span class="cm">// ヘッダー</span>
+Retry-After: <span class="num">30</span>
+
+<span class="cm">// ボディ</span>
+<span class="kw">{</span>
+  <span class="str">"error"</span>: <span class="kw">{</span>
+    <span class="str">"code"</span>:    <span class="str">"RATE_LIMITED"</span>,
+    <span class="str">"message"</span>: <span class="str">"リクエストが多すぎます。しばらく待ってから再試行してください。"</span>,
+    <span class="str">"details"</span>: <span class="kw">{</span> <span class="str">"retryAfterSec"</span>: <span class="num">30</span> <span class="kw">}</span>
+  <span class="kw">}</span>
+<span class="kw">}</span></code></pre>
+
+  <h3>500 / 502 / 503（詳細は返さない）</h3>
+  <pre><code><span class="kw">{</span>
+  <span class="str">"error"</span>: <span class="kw">{</span>
+    <span class="str">"code"</span>:    <span class="str">"INTERNAL_ERROR"</span>,  <span class="cm">// or "AI_UNAVAILABLE" / "STORAGE_ERROR"</span>
+    <span class="str">"message"</span>: <span class="str">"サーバーエラーが発生しました"</span>
+    <span class="cm">// ← スタックトレース・DB エラー・ファイルパスは絶対に含めない</span>
+  <span class="kw">}</span>
+<span class="kw">}</span></code></pre>
+
+
+  <!-- ===== 3. 例外クラス階層 ===== -->
+  <h2 id="s3">3. 例外クラス階層（実装） <span class="tag tag-impl">lib/errors.ts</span></h2>
+
+  <p>5xx 系のサーバーエラーのみ例外クラスを使う。4xx（バリデーション・not-found）は <code>Response.json()</code> で直接返す。</p>
+
+  <div class="hierarchy">
+    <div class="hier-row">
+      <span class="hier-name">AppError</span>
+      <span class="hier-desc">— 基底クラス。code / status / context を持ち <code>toResponse()</code> で JSON 化</span>
+    </div>
+    <div class="hier-indent">
+      <div class="hier-row">
+        <span class="hier-name">AiUnavailableError</span>
+        <span class="hier-badge hier-503">503</span>
+        <span class="hier-desc" style="margin-left:6px">— Groq / Anthropic API が 3 回リトライ後も失敗</span>
+      </div>
+      <div class="hier-row">
+        <span class="hier-name">StorageError</span>
+        <span class="hier-badge hier-502">502</span>
+        <span class="hier-desc" style="margin-left:6px">— Google Drive / Box の操作失敗</span>
+      </div>
+    </div>
+  </div>
+
+  <pre><code><span class="cm">// lib/errors.ts — 実装</span>
+
+<span class="kw">class</span> <span class="cls">AppError</span> <span class="kw">extends</span> Error <span class="kw">{</span>
+  <span class="fn">constructor</span>(code: string, status: number, message: string, context?: Record&lt;string, unknown&gt;) <span class="kw">{</span>
+    super(message);
+    <span class="cm">// ...</span>
+  <span class="kw">}</span>
+  <span class="fn">toResponse</span>(): Response <span class="kw">{</span>
+    <span class="kw">return</span> Response.json(<span class="kw">{</span> error: <span class="kw">{</span> code: <span class="kw">this</span>.code, message: <span class="kw">this</span>.message <span class="kw">}</span> <span class="kw">}</span>, <span class="kw">{</span> status: <span class="kw">this</span>.status <span class="kw">}</span>);
+  <span class="kw">}</span>
+<span class="kw">}</span>
+
+<span class="cm">// 使い方（ルートハンドラ内）</span>
+<span class="kw">throw new</span> <span class="cls">AiUnavailableError</span>(<span class="kw">{</span> provider: <span class="str">"groq"</span>, attempts: <span class="num">3</span> <span class="kw">}</span>);
+<span class="kw">throw new</span> <span class="cls">StorageError</span>(<span class="kw">{</span> reason: <span class="str">"token_expired"</span> <span class="kw">}</span>);</code></pre>
+
+
+  <!-- ===== 4. errorBoundary ===== -->
+  <h2 id="s4">4. エラー境界（errorBoundary）の仕組み <span class="tag tag-impl">lib/api.ts</span></h2>
+
+  <p>すべての Route Handler は <code>withApiHandler</code> / <code>withParamsHandler</code> で包む。内部で <code>errorBoundary</code> が呼ばれ、例外を一元処理する。</p>
+
+  <div class="flow">
+    <div class="flow-box">throw AppError</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box amber">errorBoundary がキャッチ</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box purple">logger.error（context 付き）</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box blue">err.toResponse() → 5xx JSON</div>
+  </div>
+
+  <div class="flow">
+    <div class="flow-box">throw 予期しない例外</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box red">errorBoundary がキャッチ</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box purple">logger.error（stack 6行付き）</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">500 INTERNAL_ERROR</div>
+  </div>
+
+  <pre><code><span class="cm">// lib/api.ts — ルートハンドラの書き方</span>
+
+<span class="cm">// パラメータなし</span>
+<span class="kw">export const</span> GET = <span class="fn">withApiHandler</span>(<span class="str">"GET /api/faqs"</span>, <span class="kw">async</span> (req) => <span class="kw">{</span>
+  <span class="cm">// ...</span>
+<span class="kw">}</span>);
+
+<span class="cm">// 動的ルートパラメータあり</span>
+<span class="kw">export const</span> POST = <span class="fn">withParamsHandler</span>&lt;<span class="kw">{</span> threadId: string <span class="kw">}</span>&gt;(
+  <span class="str">"POST /api/threads/:threadId/queries"</span>,
+  <span class="kw">async</span> (req, <span class="kw">{</span> threadId <span class="kw">}</span>) => <span class="kw">{</span>
+    <span class="cm">// ...</span>
+  <span class="kw">}</span>
+);</code></pre>
+
+  <div class="callout callout-info">
+    <strong>requestId の自動付与</strong>
+    errorBoundary は各リクエストに <code>requestId</code>（8文字 UUID）を自動生成してログに含める。
+    将来的にレスポンスヘッダーに <code>X-Request-Id</code> として返すと問い合わせ時の追跡がしやすくなる。
+  </div>
+
+  <h3>4xx は例外を使わず直接返す</h3>
+  <pre><code><span class="cm">// ✅ 正しい書き方（4xx）</span>
+<span class="kw">const</span> parsed = PostSchema.<span class="fn">safeParse</span>(body);
+<span class="kw">if</span> (!parsed.success) <span class="kw">return</span> <span class="fn">validationError</span>(parsed.error.issues.<span class="fn">map</span>(...));
+
+<span class="kw">const</span> thread = <span class="kw">await</span> db.queryThread.<span class="fn">findFirst</span>(...);
+<span class="kw">if</span> (!thread) <span class="kw">return</span> <span class="fn">notFound</span>(<span class="str">"スレッドが見つかりません"</span>);
+
+<span class="cm">// ✅ 正しい書き方（5xx は throw）</span>
+<span class="kw">throw new</span> <span class="cls">AiUnavailableError</span>(<span class="kw">{</span> provider: effectiveProvider <span class="kw">}</span>);
+
+<span class="cm">// ❌ NG — 4xx に throw を使わない</span>
+<span class="kw">throw new</span> Error(<span class="str">"not found"</span>);  <span class="cm">// → 500 INTERNAL_ERROR になってしまう</span></code></pre>
+
+
+  <!-- ===== 5. 構造化ログ・PII ===== -->
+  <h2 id="s5">5. 構造化ログ・PII サニタイズ <span class="tag tag-impl">lib/logger.ts</span></h2>
+
+  <p>ログは JSON 形式で出力し、CloudWatch Logs 等で検索しやすくする。<code>context</code> フィールドに入るデータは自動で PII サニタイズされる。</p>
+
+  <h3>ログフォーマット</h3>
+  <pre><code><span class="kw">{</span>
+  <span class="str">"level"</span>:      <span class="str">"ERROR"</span>,
+  <span class="str">"timestamp"</span>:  <span class="str">"2026-05-21T09:00:00.000Z"</span>,
+  <span class="str">"requestId"</span>:  <span class="str">"a1b2c3d4"</span>,
+  <span class="str">"path"</span>:       <span class="str">"POST /api/threads/:threadId/queries"</span>,
+  <span class="str">"method"</span>:     <span class="str">"POST"</span>,
+  <span class="str">"userId"</span>:     <span class="str">"usr_member"</span>,
+  <span class="str">"durationMs"</span>: <span class="num">423</span>,
+  <span class="str">"code"</span>:       <span class="str">"AI_UNAVAILABLE"</span>,
+  <span class="str">"message"</span>:    <span class="str">"AIサービスが一時的に利用できません。"</span>,
+  <span class="str">"context"</span>: <span class="kw">{</span>
+    <span class="str">"provider"</span>: <span class="str">"groq"</span>,
+    <span class="str">"attempts"</span>: <span class="num">3</span>,
+    <span class="str">"apiKey"</span>:   <span class="str">"***"</span>   <span class="cm">// ← PII サニタイズ済み</span>
+  <span class="kw">}</span>
+<span class="kw">}</span></code></pre>
+
+  <h3>PII サニタイズの対象</h3>
+  <p>以下のキーを含むフィールドは自動的に <code>"***"</code> に置換される（大文字小文字・部分一致）。</p>
+
+  <div class="key-grid">
+    <div class="key-chip">password</div>
+    <div class="key-chip">passcode</div>
+    <div class="key-chip">token</div>
+    <div class="key-chip">secret</div>
+    <div class="key-chip">credit</div>
+    <div class="key-chip">card</div>
+    <div class="key-chip">cvv</div>
+    <div class="key-chip">pin</div>
+    <div class="key-chip">apiKey</div>
+    <div class="key-chip">api_key</div>
+    <div class="key-chip">refreshToken</div>
+    <div class="key-chip">accessToken</div>
+    <div class="key-chip">encryptedRefreshToken</div>
+  </div>
+
+  <p>また、値が <code>@</code> と <code>.</code> を含む文字列（メールアドレス形式）は自動的にマスクされる。</p>
+
+  <pre><code><span class="cm">// マスク例</span>
+<span class="str">"minato@example.com"</span>  →  <span class="str">"mi***@example.com"</span>
+<span class="str">"gsk_OKmy6Rp2yOZ..."</span>  →  <span class="str">"***"</span>  <span class="cm">// apiKey にマッチ</span></code></pre>
+
+  <div class="callout callout-danger">
+    <strong>絶対にログに出力してはいけない情報</strong>
+    パスワード・パスコード・APIキー・クレジットカード番号・リフレッシュトークン・暗号化前のトークン本体。
+    context にこれらを渡す場合は必ず上記キー名を使うこと（自動マスクが効く）。
+  </div>
+
+
+  <!-- ===== 6. 401 vs 403 ===== -->
+  <h2 id="s6">6. 401 と 403 の使い分け</h2>
+
+  <div class="two-col">
+    <table>
+      <thead><tr><th colspan="2"><span class="badge badge-401">401</span> UNAUTHENTICATED — 認証できていない</th></tr></thead>
+      <tbody>
+        <tr><td>Cookie なし</td><td>セッション未開始</td></tr>
+        <tr><td>セッション期限切れ（7日）</td><td>Cookie はあるが DB に記録なし</td></tr>
+        <tr><td>パスコード不一致</td><td>verify 失敗</td></tr>
+        <tr><td>ログアウト後の操作</td><td>Cookie が消えている</td></tr>
+      </tbody>
+    </table>
+
+    <table>
+      <thead><tr><th colspan="2"><span class="badge badge-403">403</span> FORBIDDEN — 権限不足</th></tr></thead>
+      <tbody>
+        <tr><td>member が <code>/admin/*</code> にアクセス</td><td>admin ロールがない</td></tr>
+        <tr><td>他ユーザーのスレッドを操作</td><td>所有権がない</td></tr>
+        <tr><td>member が FAQ を作成しようとした</td><td>admin 権限が必要な操作</td></tr>
+        <tr><td>member が資料を削除しようとした</td><td>admin 権限が必要な操作</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>404 を使う場合</strong>
+    他ユーザーのリソースへのアクセスは、リソースの存在を知られないよう 403 ではなく 404 を返す設計もある。
+    本システムでは組織 ID スコープでフィルタしているため、スレッド・クエリは所有者チェックが失敗した場合に 404 を返す。
+  </div>
+
+
+  <!-- ===== 7. 401 クライアント挙動 ===== -->
+  <h2 id="s7">7. 401 受信時のクライアント挙動 <span class="tag tag-impl">lib/fetch.ts</span></h2>
+
+  <p>API から <code>401 UNAUTHENTICATED</code> を受け取ったとき、クライアントは即座にログインページへリダイレクトする。<br>
+  <code>lib/fetch.ts</code> のグローバル fetch ラッパーで一元処理し、各コンポーネントには個別のハンドリングを書かない。</p>
+
+  <div class="flow">
+    <div class="flow-box">fetch リクエスト</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box red">401 受信</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box amber">lib/fetch.ts ラッパー</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box blue">router.replace("/login")</div>
+  </div>
+
+  <pre><code><span class="cm">// lib/fetch.ts — 実装済み</span>
+<span class="kw">async function</span> <span class="fn">apiFetch</span>(url: string, init?: RequestInit) {
+  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(url, init);
+  <span class="kw">if</span> (res.status === <span class="num">401</span>) {
+    <span class="cm">// 管理画面は "/admin/login"</span>
+    <span class="kw">const</span> isAdmin = window.location.pathname.<span class="fn">startsWith</span>(<span class="str">"/admin"</span>);
+    window.location.<span class="fn">replace</span>(isAdmin ? <span class="str">"/admin/login"</span> : <span class="str">"/login"</span>);
+    <span class="kw">throw new</span> Error(<span class="str">"UNAUTHENTICATED"</span>);
+  }
+  <span class="kw">return</span> res;
+}</code></pre>
+
+  <div class="callout callout-ok">
+    <strong>proxy.ts の HMAC 検証</strong>
+    <code>proxy.ts</code> は Cookie の HMAC-SHA256 署名を検証してセッションの正当性を確認する。
+    署名が無効な場合は即座に <code>/login</code> または <code>/admin/login</code> にリダイレクトする。
+    公開 API（<code>/api/auth/passcode/*</code>、<code>/api/auth/webauthn/authenticate/*</code> 等）はスルーする。
+  </div>
+
+
+  <!-- ===== 8. AI 障害 ===== -->
+  <h2 id="s8">8. AI 障害時の挙動（AiUnavailableError）</h2>
+
+  <div class="flow">
+    <div class="flow-box">askClaude() 呼び出し</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box amber">3 回リトライ（500ms / 1000ms 待機）</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box red">全て失敗</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">throw AiUnavailableError</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box blue">503 AI_UNAVAILABLE</div>
+  </div>
+
+  <table>
+    <thead><tr><th>状況</th><th>レスポンス</th></tr></thead>
+    <tbody>
+      <tr><td>Groq / Anthropic API がタイムアウト</td><td><span class="badge badge-503">503</span> AI_UNAVAILABLE</td></tr>
+      <tr><td>Groq / Anthropic API がレート制限</td><td><span class="badge badge-503">503</span> AI_UNAVAILABLE</td></tr>
+      <tr><td>Groq / Anthropic API がサービス停止</td><td><span class="badge badge-503">503</span> AI_UNAVAILABLE</td></tr>
+      <tr><td>Claude の返答が Zod スキーマに合わない</td><td><span class="badge badge-500">500</span> INTERNAL_ERROR</td></tr>
+      <tr><td>per-org の API キーが未設定でグローバルキーも未設定</td><td><span class="badge badge-503">503</span> AI_UNAVAILABLE</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <strong>ユーザー表示文言（クライアント側）</strong>
+    503 受信時は「現在 AI が混み合っています。少し待ってから再試行してください。」と表示する。
+    エラーコードをそのまま見せない。
+  </div>
+
+
+  <!-- ===== 9. ファイルアップロード ===== -->
+  <h2 id="s9">9. ファイルアップロードのエラー</h2>
+
+  <table>
+    <thead><tr><th>条件</th><th>code</th><th>HTTP</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>ファイルサイズが 2MB 超</td>
+        <td><code>FILE_TOO_LARGE</code></td>
+        <td><span class="badge badge-400">400</span></td>
+      </tr>
+      <tr>
+        <td>PDF / TXT 以外の形式（MVP）</td>
+        <td><code>UNSUPPORTED_FILE_TYPE</code></td>
+        <td><span class="badge badge-400">400</span></td>
+      </tr>
+      <tr>
+        <td><code>file</code> フィールドが未指定</td>
+        <td><code>VALIDATION_ERROR</code></td>
+        <td><span class="badge badge-400">400</span></td>
+      </tr>
+      <tr>
+        <td>S3 アップロード失敗（S3_BUCKET 設定済みの場合）</td>
+        <td><code>INTERNAL_ERROR</code></td>
+        <td><span class="badge badge-500">500</span></td>
+      </tr>
+      <tr>
+        <td>S3_BUCKET 未設定（ローカル開発）</td>
+        <td>— エラーなし（テキスト抽出のみで DB 保存）</td>
+        <td>201</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-ok">
+    <strong>S3 の graceful degradation</strong>
+    <code>S3_BUCKET</code> 環境変数が未設定のとき、アップロード処理を静かにスキップする。
+    ローカル開発ではテキスト抽出のみ行い、AI の回答は通常通り機能する。
+  </div>
+
+
+  <!-- ===== 10. レートリミット ===== -->
+  <h2 id="s10">10. レートリミット一覧</h2>
+
+  <table>
+    <thead><tr><th>エンドポイント</th><th>上限</th><th>ウィンドウ</th><th>Retry-After</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>POST /threads/:id/queries</code></td>
+        <td>10 req</td>
+        <td>1分 / ユーザー</td>
+        <td>あり</td>
+      </tr>
+      <tr>
+        <td><code>POST /auth/passcode/request</code></td>
+        <td>5 req</td>
+        <td>1時間 / メール</td>
+        <td>あり</td>
+      </tr>
+      <tr>
+        <td>その他すべて</td>
+        <td>60 req</td>
+        <td>1分 / ユーザー</td>
+        <td>あり</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>超過時は <span class="badge badge-429">429 RATE_LIMITED</span> を返す。レスポンスヘッダーに <code>Retry-After: &lt;秒数&gt;</code> を付与する。</p>
+
+  <div class="callout callout-warn">
+    <strong>⚠ レートリミットは未実装</strong>
+    現在のコードにレートリミット処理は実装されていない。本番公開前に Redis + sliding window カウンター等で実装が必要。
+  </div>
+
+
+  <!-- ===== 11. 500 情報漏洩防止 ===== -->
+  <h2 id="s11">11. 500 エラーの情報漏洩防止ルール</h2>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">❌ レスポンスに返してはいけない情報</div>
+      <ul class="list">
+        <li>スタックトレース</li>
+        <li>DB エラーメッセージ（テーブル名・カラム名を含む）</li>
+        <li>内部ファイルパス（<code>/app/lib/...</code> 等）</li>
+        <li>環境変数の値</li>
+        <li>Prisma / SQL のクエリ文</li>
+        <li>Prisma エラークラス名（<code>PrismaClientKnownRequestError</code>）</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ ログに出力すること（サーバーサイドのみ）</div>
+      <ul class="list">
+        <li><code>requestId</code>（問い合わせ追跡用）</li>
+        <li><code>code</code>（エラーの種別）</li>
+        <li>スタックトレース上位 6 行</li>
+        <li><code>durationMs</code>（レイテンシ）</li>
+        <li><code>context</code>（PII サニタイズ済み）</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><code><span class="cm">// ❌ NG — Prisma エラーをそのまま返している</span>
+<span class="kw">catch</span> (err) <span class="kw">{</span>
+  <span class="kw">return</span> Response.json(<span class="kw">{</span> error: err.message <span class="kw">}</span>, <span class="kw">{</span> status: <span class="num">500</span> <span class="kw">}</span>);
+  <span class="cm">// → "PrismaClientKnownRequestError: Unique constraint failed on field 'email'"</span>
+<span class="kw">}</span>
+
+<span class="cm">// ✅ OK — errorBoundary が自動で汎用文言に変換する</span>
+<span class="cm">// ルートハンドラ内では何もしなくてよい。throw するだけで OK。</span>
+<span class="kw">throw new</span> Error(<span class="str">"something unexpected"</span>);
+<span class="cm">// → クライアントには { "code": "INTERNAL_ERROR", "message": "サーバーエラーが発生しました" }</span>
+<span class="cm">// → ログには stack trace が出力される</span></code></pre>
+
+</div>
+</body>
+</html>

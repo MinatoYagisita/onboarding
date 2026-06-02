@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>要件定義書 — オンボーディング Q&A システム</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #16a34a;
+      --brand-light: #f0fdf4;
+      --brand-mid: #86efac;
+      --ink: #0f172a;
+      --ink-sub: #475569;
+      --ink-mute: #94a3b8;
+      --border: #e2e8f0;
+      --surface: #f8fafc;
+    }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--ink);
+      background: var(--surface);
+    }
+
+    /* ── ヘッダー ── */
+    header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: #fff;
+      padding: 48px 56px 40px;
+    }
+    .header-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--brand-mid);
+      margin-bottom: 10px;
+    }
+    header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    header .meta { font-size: 13px; opacity: .6; }
+
+    /* ── サイドナビ ── */
+    .layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 40px 24px 100px; gap: 40px; }
+    .sidenav {
+      width: 220px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 24px;
+      align-self: flex-start;
+    }
+    .sidenav-title { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 10px; }
+    .sidenav a {
+      display: block;
+      font-size: 13px;
+      color: var(--ink-sub);
+      text-decoration: none;
+      padding: 5px 10px;
+      border-left: 2px solid var(--border);
+      margin-bottom: 2px;
+      transition: all .15s;
+    }
+    .sidenav a:hover { color: var(--brand); border-left-color: var(--brand); background: var(--brand-light); border-radius: 0 4px 4px 0; }
+    .sidenav .group { margin-top: 14px; }
+    .sidenav .group-label { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-mute); padding: 0 10px; margin-bottom: 4px; }
+
+    /* ── 本文 ── */
+    main { flex: 1; min-width: 0; }
+    section { margin-bottom: 64px; }
+    h2 {
+      font-size: 18px; font-weight: 700; color: var(--ink);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2 .num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px;
+      background: var(--ink); color: #fff;
+      border-radius: 6px; font-size: 13px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    h3 { font-size: 14px; font-weight: 700; color: var(--ink); margin: 24px 0 10px; }
+    p { color: var(--ink-sub); margin-bottom: 10px; }
+
+    /* ── ステータスバッジ ── */
+    .st {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700; padding: 2px 8px;
+      border-radius: 20px; white-space: nowrap;
+    }
+    .st::before { content: ""; display: block; width: 6px; height: 6px; border-radius: 50%; }
+    .st-done  { background: #dcfce7; color: #15803d; }
+    .st-done::before  { background: #16a34a; }
+    .st-wip   { background: #dbeafe; color: #1d4ed8; }
+    .st-wip::before   { background: #3b82f6; }
+    .st-todo  { background: #fef9c3; color: #854d0e; }
+    .st-todo::before  { background: #ca8a04; }
+    .st-mock  { background: #f1f5f9; color: #475569; }
+    .st-mock::before  { background: #94a3b8; }
+
+    /* ── 要件リスト ── */
+    .req-list { list-style: none; margin-bottom: 16px; }
+    .req-list li {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      background: #fff;
+      border: 1px solid var(--border);
+    }
+    .req-list li:hover { background: var(--brand-light); border-color: var(--brand-mid); }
+    .req-icon { font-size: 15px; flex-shrink: 0; }
+    .req-text { flex: 1; font-size: 13px; color: var(--ink-sub); }
+    .req-text strong { color: var(--ink); font-weight: 600; }
+    .req-list li .st { margin-left: auto; flex-shrink: 0; }
+
+    /* ── フィーチャーカード ── */
+    .feat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .feat {
+      background: #fff; border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .feat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .feat-icon { font-size: 20px; }
+    .feat-title { font-size: 13px; font-weight: 700; color: var(--ink); }
+    .feat ul { list-style: none; }
+    .feat ul li { font-size: 12px; color: var(--ink-sub); padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
+    .feat ul li:last-child { border-bottom: none; }
+    .feat ul li::before { content: "·  "; color: var(--brand); font-weight: 700; }
+
+    /* ── 実装ステータス表 ── */
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); margin-bottom: 20px; }
+    thead th { background: #f1f5f9; text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700; color: var(--ink-mute); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid #f8fafc; vertical-align: top; font-size: 13px; color: var(--ink-sub); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--brand-light); }
+    tbody td:first-child { color: var(--ink); font-weight: 500; }
+
+    code { font-family: ui-monospace, monospace; font-size: 12px; background: #f1f5f9; padding: 1px 5px; border-radius: 3px; color: var(--ink); }
+
+    /* ── callout ── */
+    .callout { border-left: 3px solid; border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 14px 0; font-size: 13px; color: var(--ink-sub); }
+    .callout-warn { border-color: #f59e0b; background: #fffbeb; }
+    .callout-info { border-color: #3b82f6; background: #eff6ff; }
+    .callout strong { display: block; color: var(--ink); font-weight: 700; margin-bottom: 4px; }
+
+    /* ── フロー図 ── */
+    .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 0; margin: 12px 0 20px; }
+    .flow-box { background: #fff; border: 1.5px solid var(--border); border-radius: 8px; padding: 7px 13px; font-size: 12px; font-weight: 500; color: #334155; white-space: nowrap; }
+    .flow-box.green { border-color: var(--brand-mid); background: var(--brand-light); color: #15803d; }
+    .flow-box.blue  { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
+    .flow-box.amber { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
+    .flow-arrow { padding: 0 8px; color: var(--ink-mute); font-size: 16px; }
+
+    /* ── 優先度 ── */
+    .pri { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
+    .pri-1 { background: #fee2e2; color: #991b1b; }
+    .pri-2 { background: #fed7aa; color: #9a3412; }
+    .pri-3 { background: #fef9c3; color: #854d0e; }
+    .pri-4 { background: #e0e7ff; color: #3730a3; }
+    .pri-5 { background: #f1f5f9; color: #475569; }
+
+    @media (max-width: 760px) {
+      .layout { flex-direction: column; }
+      .sidenav { width: 100%; position: static; }
+      header { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-eyebrow">GrowDays — SaaS プロダクト</div>
+  <h1>オンボーディング Q&amp;A システム<br>要件定義書</h1>
+  <div class="meta">2026-05-21 版　／　対象: 開発チーム・PdM</div>
+</header>
+
+<div class="layout">
+
+  <!-- サイドナビ -->
+  <nav class="sidenav">
+    <div class="sidenav-title">目次</div>
+    <a href="#s1">1. プロダクト概要</a>
+    <a href="#s2">2. 解決する課題</a>
+    <a href="#s3">3. ユーザー要件</a>
+    <a href="#s4">4. 管理者要件</a>
+    <a href="#s5">5. 検索・AI 要件</a>
+    <a href="#s6">6. 外部連携要件</a>
+    <a href="#s7">7. 認証・セキュリティ要件</a>
+    <a href="#s8">8. 実装ステータス</a>
+    <a href="#s9">9. 用語集</a>
+  </nav>
+
+  <main>
+
+    <!-- ===== 1. プロダクト概要 ===== -->
+    <section id="s1">
+      <h2><span class="num">1</span> プロダクト概要</h2>
+
+      <div class="feat-grid">
+        <div class="feat">
+          <div class="feat-head"><span class="feat-icon">🎯</span><span class="feat-title">ターゲット</span></div>
+          <ul>
+            <li>新入社員・アルバイトスタッフ（質問するユーザー）</li>
+            <li>バックオフィス担当者（資料管理・FAQ 管理）</li>
+            <li>AI・システムに疎い業種不問の企業</li>
+          </ul>
+        </div>
+        <div class="feat">
+          <div class="feat-head"><span class="feat-icon">💡</span><span class="feat-title">コンセプト</span></div>
+          <ul>
+            <li>社内規約・マニュアルを AI が参照して回答</li>
+            <li>ChatGPT ライクなわかりやすい UI</li>
+            <li>資料を管理画面からアップロードするだけで動く</li>
+          </ul>
+        </div>
+        <div class="feat">
+          <div class="feat-head"><span class="feat-icon">🏗️</span><span class="feat-title">マルチテナント</span></div>
+          <ul>
+            <li>サブドメイン（<code>{orgSlug}.app.example.com</code>）で組織を識別</li>
+            <li>全データは <code>organization_id</code> スコープで分離</li>
+            <li>各組織が個別の AI API キーを持てる設計</li>
+          </ul>
+        </div>
+        <div class="feat">
+          <div class="feat-head"><span class="feat-icon">📦</span><span class="feat-title">技術スタック</span></div>
+          <ul>
+            <li>Next.js 16 / React 19 / Tailwind CSS v4</li>
+            <li>PostgreSQL + Prisma 7</li>
+            <li>Groq SDK（メイン）/ Anthropic SDK（フォールバック）</li>
+            <li>AWS Secrets Manager + S3</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===== 2. 解決する課題 ===== -->
+    <section id="s2">
+      <h2><span class="num">2</span> 解決する課題</h2>
+
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">😤</span>
+          <span class="req-text"><strong>上司・先輩への問い合わせ工数が多い</strong> — 新人が「有給はいつから？」「休憩は何分？」のような基礎的な質問を都度聞いてしまう</span>
+        </li>
+        <li>
+          <span class="req-icon">📄</span>
+          <span class="req-text"><strong>社内規約を自力で探せない</strong> — 就業規則 PDF がどこにあるか分からず、見つけても該当箇所を読み解けない</span>
+        </li>
+        <li>
+          <span class="req-icon">⏳</span>
+          <span class="req-text"><strong>新人教育の立ち上がりが遅い</strong> — 教える側・教わる側の両方に時間がかかり、戦力化が遅れる</span>
+        </li>
+        <li>
+          <span class="req-icon">🌐</span>
+          <span class="req-text"><strong>業種・会社ごとにルールが違う</strong> — 汎用的な Q&amp;A ではなく、その会社の資料に基づいた回答が必要</span>
+        </li>
+      </ul>
+    </section>
+
+
+    <!-- ===== 3. ユーザー要件 ===== -->
+    <section id="s3">
+      <h2><span class="num">3</span> ユーザー要件（一般社員・アルバイト）</h2>
+
+      <h3>3-1. 質問・回答</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">💬</span>
+          <span class="req-text"><strong>自然言語で質問できる</strong> — テキストエリアに普通の日本語で入力。Enter で改行、Cmd+Enter で送信</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔍</span>
+          <span class="req-text">プレースホルダーに例文（「休憩は何分取れますか？」）を表示して入力イメージを伝える</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">📝</span>
+          <span class="req-text"><strong>回答は構造化されて表示される</strong> — 結論 → 根拠 → 補足 → 注意点 → 相談先 の順序</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">📎</span>
+          <span class="req-text">回答には<strong>出典（資料名・セクション）</strong>を表示する</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔁</span>
+          <span class="req-text"><strong>追加質問ができる</strong> — 同一スレッド内で文脈を引き継いで追加質問を送れる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">❌</span>
+          <span class="req-text"><strong>回答が見つからない場合</strong> — 「回答が見つかりませんでした」を表示。資料不足以外の理由はシステム上受け付けない</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔗</span>
+          <span class="req-text">回答が見つからない場合は<strong>関連 FAQ を最大 3 件</strong>表示する</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+
+      <h3>3-2. フィードバック</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">👍</span>
+          <span class="req-text"><strong>「役に立った / 立たなかった」</strong>のフィードバックを各回答に表示。DB に保存して精度改善に活用</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+
+      <h3>3-3. 担当者へのエスカレーション</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">📤</span>
+          <span class="req-text"><strong>担当者に相談を送れる</strong> — 「担当者に送る」ボタン → 質問をコピー → 本文を再入力 → 送信確認ダイアログの 3 ステップ</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">📋</span>
+          <span class="req-text">質問文をコピーするボタンを用意する（口調が異なるため再入力させる設計）</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+
+      <h3>3-4. 質問履歴</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">📚</span>
+          <span class="req-text"><strong>過去の質問をサイドバーに一覧表示</strong> — リロード後も履歴が残る（DB 永続化）</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">📌</span>
+          <span class="req-text">スレッドを<strong>ピン留め</strong>できる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🗒️</span>
+          <span class="req-text">スレッドに<strong>自分用メモ</strong>を記入できる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🗑️</span>
+          <span class="req-text">スレッドを<strong>削除</strong>できる（論理削除。管理データは残る）</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+
+      <h3>3-5. よくある質問（FAQ）タブ</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">📋</span>
+          <span class="req-text"><strong>FAQ タブ</strong>を切り替えてよくある質問を閲覧できる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🏷️</span>
+          <span class="req-text"><strong>カテゴリ</strong>でフィルタできる（例: 入社初日・勤怠・服装・有給）</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🏆</span>
+          <span class="req-text"><strong>ランキング順</strong>（実際に質問された回数の多い順）でも表示できる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+
+      <h3>3-6. 認証</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">✉️</span>
+          <span class="req-text"><strong>メールアドレス + パスコード</strong>（パスワードレス）でログイン — メールに 6 桁コードを送付。10分有効。ロックアウト・レート制限対応</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔬</span>
+          <span class="req-text">オプション: <strong>パスキー（生体認証 / WebAuthn）</strong> — FIDO2 準拠。登録・認証・管理（/settings）実装済み</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+    </section>
+
+
+    <!-- ===== 4. 管理者要件 ===== -->
+    <section id="s4">
+      <h2><span class="num">4</span> 管理者要件</h2>
+
+      <h3>4-1. 資料管理</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">📁</span>
+          <span class="req-text"><strong>資料をアップロードできる</strong> — PDF / TXT（MVP）。将来: Word / Excel 対応予定</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">☁️</span>
+          <span class="req-text">アップロードしたファイルは<strong>S3 互換ストレージ</strong>に保管し、テキスト抽出して AI に利用させる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">📄</span>
+          <span class="req-text">現在利用中の資料一覧を確認できる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🗑️</span>
+          <span class="req-text">資料を削除できる（論理削除。過去の質問への参照は残る）</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔗</span>
+          <span class="req-text"><strong>Google Drive / Box のフォルダを指定</strong>して自動同期できる</span>
+          <span class="st st-wip">実装済み（本番テスト待ち）</span>
+        </li>
+      </ul>
+
+      <h3>4-2. FAQ 管理</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">✏️</span>
+          <span class="req-text"><strong>FAQ を作成・編集・削除できる</strong> — 質問文・回答（結論/根拠/補足/注意/相談先）・カテゴリ・公開フラグ</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">👁️</span>
+          <span class="req-text">FAQ は<strong>下書き状態で保存できる</strong> — <code>isPublished: false</code> の間はユーザーに見えない</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔗</span>
+          <span class="req-text">未回答一覧から<strong>「FAQ に追加」</strong>ボタンで FAQ 作成画面に遷移できる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+
+      <h3>4-3. カテゴリ管理</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">🏷️</span>
+          <span class="req-text"><strong>カテゴリの作成・編集・削除・並び順変更</strong>ができる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">💡</span>
+          <span class="req-text">デフォルトカテゴリ例: 入社初日に多い質問 / 勤怠・シフト / 服装・持ち物 / 有給・休憩 / 店舗ルール / トラブル時</span>
+        </li>
+      </ul>
+
+      <h3>4-4. 未回答一覧</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">❓</span>
+          <span class="req-text"><strong>AI が回答できなかった質問の一覧を確認できる</strong> — 最近順・頻度順でソート</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔔</span>
+          <span class="req-text">未回答が発生したとき<strong>Slack 等へ通知</strong>が届く</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+
+      <h3>4-5. ランキング</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">🏆</span>
+          <span class="req-text"><strong>質問ランキングを確認できる</strong> — 期間指定・上位 N 件。どの質問が多いかを把握して FAQ 整備に活用</span>
+          <span class="st st-mock">UI のみ（API 未接続）</span>
+        </li>
+      </ul>
+
+      <h3>4-6. 組織設定</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">🎨</span>
+          <span class="req-text"><strong>ブランドカラー・ロゴ・表示文言</strong>をカスタマイズできる（ウェルカム画面・タブ名など）</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔑</span>
+          <span class="req-text"><strong>AI API キーの設定状況を確認できる</strong> — キーの登録は GrowDays 担当者が Secrets Manager に直接登録</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🔗</span>
+          <span class="req-text"><strong>Google Drive / Box の連携設定</strong>ができる — OAuth 認証・フォルダ選択・同期 ON/OFF</span>
+          <span class="st st-wip">実装済み（本番テスト待ち）</span>
+        </li>
+        <li>
+          <span class="req-icon">🔔</span>
+          <span class="req-text"><strong>通知先（Slack / email）</strong>を設定できる</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+
+      <h3>4-7. 管理者認証・ユーザー管理</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">🔒</span>
+          <span class="req-text">組織ごとに管理者アカウントを管理できる — ロール: <code>admin</code> / <code>member</code></span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">➕</span>
+          <span class="req-text">管理画面からユーザーを追加できる（追加されたユーザーにパスコードをメール送付）。編集・削除・ロール変更も可能</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+      </ul>
+    </section>
+
+
+    <!-- ===== 5. 検索・AI 要件 ===== -->
+    <section id="s5">
+      <h2><span class="num">5</span> 検索・AI 要件</h2>
+
+      <h3>5-1. 検索方式（MVP）</h3>
+      <div class="callout callout-info">
+        <strong>MVP 方針: Full context + プロンプトキャッシュ</strong>
+        FAQ 全件 + 資料全文をシステムプロンプトに含め、Anthropic のプロンプトキャッシュを活用してコストを抑える。
+        スケール時（資料 500 ページ超）は RAG（pgvector）に移行する。
+      </div>
+
+      <div class="flow">
+        <div class="flow-box">ユーザーの質問</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box blue">システムプロンプト<br>（FAQ全件 + 資料全文）</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Groq / Anthropic API<br>tool_use で JSON 強制</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box green">構造化回答<br>（Zod バリデーション済み）</div>
+      </div>
+
+      <h3>5-2. 回答フォーマット（AI が返す構造）</h3>
+      <table>
+        <thead><tr><th>フィールド</th><th>内容</th><th>必須</th></tr></thead>
+        <tbody>
+          <tr><td><code>conclusion</code></td><td>結論（1〜2文）</td><td>✅</td></tr>
+          <tr><td><code>evidence</code></td><td>根拠となる規則・条文</td><td>✅</td></tr>
+          <tr><td><code>supplement</code></td><td>補足情報</td><td>任意</td></tr>
+          <tr><td><code>caution</code></td><td>注意点</td><td>任意</td></tr>
+          <tr><td><code>contact</code></td><td>相談先</td><td>✅</td></tr>
+          <tr><td><code>sources</code></td><td>引用資料（title / section / documentId）の配列</td><td>✅</td></tr>
+          <tr><td><code>matchedFaqId</code></td><td>一致した FAQ の ID（なければ <code>null</code>）</td><td>✅</td></tr>
+        </tbody>
+      </table>
+
+      <h3>5-3. FAQ 優先・asked_count 更新</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">⭐</span>
+          <span class="req-text">AI は FAQ と資料の両方を参照し、<strong>FAQ に一致する場合は FAQ を優先</strong>して回答する。<code>matchedFaqId</code> を返すことで特定。</span>
+        </li>
+        <li>
+          <span class="req-icon">📊</span>
+          <span class="req-text"><code>matchedFaqId</code> が返った場合はアプリ層で <code>faqs.asked_count</code> を +1 する（DB トリガー不使用）</span>
+        </li>
+      </ul>
+
+      <h3>5-4. プロバイダと優先順位</h3>
+      <table>
+        <thead><tr><th>優先度</th><th>プロバイダ</th><th>モデル</th><th>切替条件</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pri pri-1">1st</span></td><td>per-org キー（Secrets Manager）</td><td>設定に依存</td><td>キーが設定されている場合</td></tr>
+          <tr><td><span class="pri pri-2">2nd</span></td><td>Groq（グローバル共通キー）</td><td>llama-3.3-70b-versatile</td><td><code>AI_PROVIDER=groq</code> またはデフォルト</td></tr>
+          <tr><td><span class="pri pri-3">3rd</span></td><td>Anthropic（グローバル共通キー）</td><td>claude-haiku-4-5</td><td><code>AI_PROVIDER=claude</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>5-5. RAG 移行基準</h3>
+      <table>
+        <thead><tr><th>基準</th><th>目安</th></tr></thead>
+        <tbody>
+          <tr><td>単一組織の資料総ページ数</td><td>500 ページ超</td></tr>
+          <tr><td>コンテキストウィンドウ使用率</td><td>70% 超</td></tr>
+          <tr><td>1 リクエストのレイテンシ</td><td>10 秒超</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+
+    <!-- ===== 6. 外部連携要件 ===== -->
+    <section id="s6">
+      <h2><span class="num">6</span> 外部連携要件</h2>
+
+      <h3>6-1. Google Drive / Box 自動同期</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">🔗</span>
+          <span class="req-text">管理者が<strong>フォルダを指定</strong>すると、フォルダ内のファイルを<strong>定期的に自動取り込み</strong>する</span>
+        </li>
+        <li>
+          <span class="req-icon">🔑</span>
+          <span class="req-text">OAuth 認可は組織ごとに管理者が自分のアカウントで行う</span>
+        </li>
+        <li>
+          <span class="req-icon">🔒</span>
+          <span class="req-text">リフレッシュトークンは<strong>AES-256-GCM で暗号化</strong>して DB に保存（<code>ENCRYPTION_KEY</code> を Secrets Manager で管理）</span>
+        </li>
+        <li>
+          <span class="req-icon">⏱️</span>
+          <span class="req-text">同期間隔: デフォルト 1 時間（<code>SYNC_INTERVAL_HOURS</code> 環境変数で変更可能）</span>
+        </li>
+      </ul>
+
+      <h3>6-2. 対応ファイル形式</h3>
+      <table>
+        <thead><tr><th>形式</th><th>Google Drive</th><th>Box</th><th>手動アップロード</th></tr></thead>
+        <tbody>
+          <tr><td>PDF (.pdf)</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>テキスト (.txt)</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>Google ドキュメント</td><td>✅（text/plain エクスポート）</td><td>—</td><td>—</td></tr>
+          <tr><td>Word (.docx)</td><td>✅</td><td>✅</td><td>❌（MVP 外）</td></tr>
+          <tr><td>Excel / Sheets</td><td>❌</td><td>❌</td><td>❌</td></tr>
+          <tr><td>画像・スキャン PDF</td><td>❌（OCR は将来対応）</td><td>❌</td><td>❌</td></tr>
+        </tbody>
+      </table>
+
+      <h3>6-3. 通知（Slack / email）</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">🔔</span>
+          <span class="req-text">未回答が発生したとき・エスカレーションが送信されたとき、設定した通知チャネルへ送信する</span>
+          <span class="st st-done">実装済み</span>
+        </li>
+        <li>
+          <span class="req-icon">🛠️</span>
+          <span class="req-text">対応チャネル: <strong>Slack</strong>（Block Kit 形式）・<strong>email</strong>（Resend API）。複数チャネル同時設定可能。開発時はコンソール出力</span>
+        </li>
+      </ul>
+    </section>
+
+
+    <!-- ===== 7. 認証・セキュリティ要件 ===== -->
+    <section id="s7">
+      <h2><span class="num">7</span> 認証・セキュリティ要件</h2>
+
+      <h3>7-1. 認証方式</h3>
+      <table>
+        <thead><tr><th>対象</th><th>方式</th><th>状態</th></tr></thead>
+        <tbody>
+          <tr><td>一般ユーザー（フロント）</td><td>メールアドレス + パスコード（6桁・10分有効）</td><td><span class="st st-done">実装済み</span></td></tr>
+          <tr><td>管理者（管理画面）</td><td>同じくパスコード認証（<code>/admin/login</code> 専用ページ）</td><td><span class="st st-done">実装済み</span></td></tr>
+          <tr><td>オプション（全ユーザー）</td><td>パスキー（WebAuthn / FIDO2 生体認証）</td><td><span class="st st-done">実装済み</span></td></tr>
+          <tr><td>開発用モック</td><td><code>POST /api/auth/mock-login</code>（本番では 404）</td><td><span class="st st-done">開発用のみ</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-info">
+        <strong>セッション管理</strong>
+        セッションは DB（<code>auth_sessions</code> テーブル）で管理。Cookie に HMAC-SHA256 署名付きトークンを保存。
+        <code>proxy.ts</code> がすべてのリクエストで署名を検証し、未認証リクエストを <code>/login</code> または <code>/admin/login</code> にリダイレクトする。
+      </div>
+
+      <h3>7-2. セキュリティ要件</h3>
+      <ul class="req-list">
+        <li>
+          <span class="req-icon">🔑</span>
+          <span class="req-text">API キーは <code>NEXT_PUBLIC_</code> を絶対に付けない — <strong>サーバーサイド専用</strong></span>
+        </li>
+        <li>
+          <span class="req-icon">🏦</span>
+          <span class="req-text">本番の API キー・DB パスワードは <strong>AWS Secrets Manager</strong> で管理（<code>.env</code> ファイルにベタ書き禁止）</span>
+        </li>
+        <li>
+          <span class="req-icon">🔐</span>
+          <span class="req-text">OAuth リフレッシュトークンは <strong>AES-256-GCM 暗号化</strong>して DB に保存</span>
+        </li>
+        <li>
+          <span class="req-icon">🚫</span>
+          <span class="req-text">500 エラーのレスポンスに <strong>スタックトレース・DB エラー・ファイルパス</strong>を含めない</span>
+        </li>
+        <li>
+          <span class="req-icon">🙈</span>
+          <span class="req-text">ログに <strong>PII（パスワード・パスコード・API キー・メールアドレス）</strong>を出力しない（自動サニタイズあり）</span>
+        </li>
+        <li>
+          <span class="req-icon">🍪</span>
+          <span class="req-text">セッション Cookie は <code>httpOnly; Secure; SameSite=Lax</code>、有効期限 7 日</span>
+        </li>
+        <li>
+          <span class="req-icon">🔒</span>
+          <span class="req-text">ログイン失敗は 60 分で 5 回でロックアウト（15 分）。失敗時のメッセージは「メールアドレスまたはパスワードが正しくありません。」に統一</span>
+        </li>
+        <li>
+          <span class="req-icon">🌐</span>
+          <span class="req-text"><code>NODE_TLS_REJECT_UNAUTHORIZED=0</code> は開発環境のみ。本番で使用禁止</span>
+        </li>
+      </ul>
+    </section>
+
+
+    <!-- ===== 8. 実装ステータス ===== -->
+    <section id="s8">
+      <h2><span class="num">8</span> 実装ステータス（2026-05-21 時点）</h2>
+
+      <table>
+        <thead><tr><th>優先度</th><th>機能</th><th>状態</th><th>備考</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="pri pri-1">P1</span></td>
+            <td>AI API 接続（Groq / Anthropic）</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>tool_use / Zod 強制 / 3 回リトライ</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-1">P1</span></td>
+            <td>チャット履歴の永続化</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>DB 保存・リロード後も復元</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-1">P1</span></td>
+            <td>組織設定の DB 保存</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>色・ロゴ・文言のカスタマイズ</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-1">P1</span></td>
+            <td>フィードバック・エスカレーション保存</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>DB 保存済み</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-1">P1</span></td>
+            <td>FAQ / カテゴリ / 資料 CRUD</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>API + 管理画面 UI 接続済み</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-1">P1</span></td>
+            <td>per-org API キー管理</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>Secrets Manager + 30 分キャッシュ</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-1">P1</span></td>
+            <td>S3 ドキュメント保管</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>LocalStack でローカルテスト済み</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-2">P2</span></td>
+            <td>パスコード認証（メール + 6桁コード）</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>ロックアウト・レート制限・セッション HMAC 検証対応</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-2">P2</span></td>
+            <td>パスキー認証（WebAuthn / 生体認証）</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>FIDO2 準拠。登録・認証・管理画面（/settings）実装済み</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-2">P2</span></td>
+            <td>ユーザー管理（管理画面）</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>CRUD + 招待メール（パスコード送付）対応</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-2">P2</span></td>
+            <td>Google Drive / Box 自動同期</td>
+            <td><span class="st st-wip">実装済み・本番テスト待ち</span></td>
+            <td>OAuth コールバック URL を本番環境に登録が必要</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-3">P3</span></td>
+            <td>Slack / email 通知送信</td>
+            <td><span class="st st-done">完了</span></td>
+            <td>Block Kit 形式 / Resend API。開発時はコンソール出力</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-3">P3</span></td>
+            <td>ランキング API 接続</td>
+            <td><span class="st st-mock">UI のみ</span></td>
+            <td><code>GET /api/admin/ranking</code> 接続未完了</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-4">P4</span></td>
+            <td>ファイルストレージ（S3）接続</td>
+            <td><span class="st st-todo">未着手</span></td>
+            <td>テキスト抽出後 DB 保存のみ。本番は S3 + KMS が必要</td>
+          </tr>
+          <tr>
+            <td><span class="pri pri-4">P4</span></td>
+            <td>マルチテナント（DNS・サブドメイン）</td>
+            <td><span class="st st-todo">未着手</span></td>
+            <td>コードは対応済み。DNS 設定のみ未完了</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+
+    <!-- ===== 9. 用語集 ===== -->
+    <section id="s9">
+      <h2><span class="num">9</span> 用語集</h2>
+
+      <table>
+        <thead><tr><th>用語</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td>ユーザー</td><td>社員・アルバイトなど、その組織で働く人間。フロント画面から質問する側。</td></tr>
+          <tr><td>管理者（admin）</td><td>資料・FAQ・カテゴリ・設定を管理するバックオフィス担当者。</td></tr>
+          <tr><td>組織（Organization）</td><td>マルチテナントの単位。1 社 1 テナント。スラッグ（例: <code>sprout</code>）でサブドメインを形成する。</td></tr>
+          <tr><td>スレッド（QueryThread）</td><td>1 つの会話全体。最初の質問から始まる追加質問のまとまり。</td></tr>
+          <tr><td>クエリ / turn（Query）</td><td>スレッド内の 1 発話（ユーザーの質問 + AI の回答のペア）。</td></tr>
+          <tr><td>FAQ</td><td>管理者が手動で作成したよくある質問と回答。AI が優先的に参照する。</td></tr>
+          <tr><td>資料（Document）</td><td>管理者がアップロードした規約・マニュアル等の PDF / TXT。テキスト抽出して AI に渡す。</td></tr>
+          <tr><td>エスカレーション</td><td>ユーザーが回答に納得できず担当者に相談内容を送る機能。</td></tr>
+          <tr><td>per-org キー</td><td>各顧客組織が契約した AI API キー。Secrets Manager の <code>onboarding/{orgId}/api-key</code> に保管。</td></tr>
+          <tr><td>asked_count</td><td>FAQ が実際に質問にマッチした回数。ランキング表示・FAQ 優先度の判断に使う。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
