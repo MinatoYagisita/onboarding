@@ -59,7 +59,7 @@ export const POST = withParamsHandler<{ threadId: string }>(
         userId: session.id,
         question,
         resultKind: claudeResult.kind === "answer" ? "answer" : "not_found",
-        answer: claudeResult.kind === "answer" ? (claudeResult.answer as Record<string, unknown>) : undefined,
+        answer: claudeResult.kind === "answer" ? (claudeResult.answer as object) : undefined,
         relatedFaqIds: relatedFaqIds.length > 0 ? relatedFaqIds : undefined,
         matchedFaqId:
           claudeResult.kind === "answer" && claudeResult.answer.matchedFaqId

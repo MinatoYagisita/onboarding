@@ -5,6 +5,7 @@ type LogEntry = {
   path: string;
   method: string;
   userId?: string;
+  sessionHint?: string;
   durationMs?: number;
   code?: string;
   message: string;

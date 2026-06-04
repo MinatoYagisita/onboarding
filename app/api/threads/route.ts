@@ -46,7 +46,7 @@ export const POST = withApiHandler("POST /api/threads", async (req) => {
       userId: session.id,
       question,
       resultKind: claudeResult.kind === "answer" ? "answer" : "not_found",
-      answer: claudeResult.kind === "answer" ? (claudeResult.answer as Record<string, unknown>) : undefined,
+      answer: claudeResult.kind === "answer" ? (claudeResult.answer as object) : undefined,
       relatedFaqIds: relatedFaqIds.length > 0 ? relatedFaqIds : undefined,
       matchedFaqId:
         claudeResult.kind === "answer" && claudeResult.answer.matchedFaqId

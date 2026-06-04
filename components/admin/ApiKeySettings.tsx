@@ -16,7 +16,7 @@ export function ApiKeySettings() {
     fetch("/api/admin/api-key")
       .then((r) => r.json())
       .then((d: Status) => setStatus(d))
-      .catch(() => setStatus({ configured: false, provider: null, devMode: false }));
+      .catch(() => setStatus({ configured: false, provider: null, devMode: false, orgId: "" }));
   }, []);
 
   if (status === null) {
