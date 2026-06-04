@@ -7,13 +7,25 @@ const FRONTEND_LOGIN = "/login";
 const ADMIN_LOGIN = "/admin/login";
 
 function extractOrgSlug(hostname: string): string | null {
-  // {orgSlug}.app.example.com → orgSlug
-  // localhost / localhost:3000 → null（環境変数にフォールバック）
+  // localhost → null（環境変数にフォールバック）
   if (hostname.startsWith("localhost") || hostname.match(/^\d+\.\d+\.\d+\.\d+/)) {
     return null;
   }
+  // APP_BASE_URL のサブドメインのみ有効（例: sprout.app.example.com）
+  // APP_BASE_URL 自身や vercel.app など別ドメインはフォールバック
+  const baseUrl = process.env.APP_BASE_URL;
+  if (baseUrl) {
+    try {
+      const baseHost = new URL(baseUrl).hostname;
+      if (hostname === baseHost || !hostname.endsWith(`.${baseHost}`)) {
+        return null;
+      }
+      return hostname.slice(0, hostname.length - baseHost.length - 1).split(".").pop() ?? null;
+    } catch {
+      return null;
+    }
+  }
   const parts = hostname.split(".");
-  // サブドメインが1段階だけある場合（sprout.app.example.com → parts[0]）
   return parts.length >= 3 ? (parts[0] ?? null) : null;
 }
 
