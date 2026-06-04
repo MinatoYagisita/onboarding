@@ -1,16 +1,36 @@
-const RESEND_API_URL = "https://api.resend.com/emails";
+import nodemailer from "nodemailer";
+
+function createTransport() {
+  // SMTP設定（Gmail・Outlook・任意のSMTPサーバーに対応）
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT ?? "587"),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+}
+
+function isSmtpConfigured(): boolean {
+  return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+}
 
 export async function sendPasscodeEmail(
   email: string,
   code: string,
   orgName: string,
 ): Promise<void> {
-  if (process.env.NODE_ENV !== "production" || !process.env.RESEND_API_KEY) {
+  if (!isSmtpConfigured()) {
     console.log(`[DEV] passcode for ${email}: ${code}`);
     return;
   }
 
-  await sendEmail({
+  const from = process.env.SMTP_FROM ?? process.env.SMTP_USER ?? "noreply@example.com";
+
+  await createTransport().sendMail({
+    from: `"${orgName}" <${from}>`,
     to: email,
     subject: `【${orgName}】ログインパスコード: ${code}`,
     html: `
@@ -20,28 +40,4 @@ export async function sendPasscodeEmail(
       <p>このメールに心当たりがない場合は無視してください。</p>
     `,
   });
-}
-
-async function sendEmail({
-  to,
-  subject,
-  html,
-}: {
-  to: string;
-  subject: string;
-  html: string;
-}): Promise<void> {
-  const from = process.env.RESEND_FROM ?? "noreply@mail.example.com";
-  const res = await fetch(RESEND_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-    },
-    body: JSON.stringify({ from, to, subject, html }),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Resend API error ${res.status}: ${body}`);
-  }
 }
