@@ -18,13 +18,11 @@ export const POST = withApiHandler(
     if (!organizationSlug) errors.push({ field: "organizationSlug", message: "organizationSlug は必須です" });
     if (errors.length) return validationError(errors);
 
-    console.log(`[PASSCODE] slug="${organizationSlug}" email="${email}"`);
     const org = await db.organization.findFirst({
       where: { slug: organizationSlug, deletedAt: null },
     });
-    console.log(`[PASSCODE] org found: ${org?.id ?? "NOT FOUND"}`);
     // 組織不存在でも 200 を返す（列挙攻撃防止）
-    if (!org) return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC });
+    if (!org) return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC, _p: 1 });
 
     // ロックアウト確認
     const lockout = await db.authLockout.findUnique({
@@ -59,15 +57,13 @@ export const POST = withApiHandler(
     } catch (err) {
       // FK制約違反 = users に存在しないメール → 列挙攻撃防止のため200を返す
       if ((err as { code?: string }).code === "P2003") {
-        console.log(`[PASSCODE] FK error - user not found: ${email}`);
-        return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC });
+        return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC, _p: 2 });
       }
       throw err;
     }
 
-    console.log(`[PASSCODE] calling sendPasscodeEmail for: ${email}`);
     await sendPasscodeEmail(email, code, org.name);
 
-    return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC });
+    return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC, _p: 3 });
   },
 );
