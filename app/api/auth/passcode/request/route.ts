@@ -18,9 +18,11 @@ export const POST = withApiHandler(
     if (!organizationSlug) errors.push({ field: "organizationSlug", message: "organizationSlug は必須です" });
     if (errors.length) return validationError(errors);
 
+    console.log(`[PASSCODE] slug="${organizationSlug}" email="${email}"`);
     const org = await db.organization.findFirst({
       where: { slug: organizationSlug, deletedAt: null },
     });
+    console.log(`[PASSCODE] org found: ${org?.id ?? "NOT FOUND"}`);
     // 組織不存在でも 200 を返す（列挙攻撃防止）
     if (!org) return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC });
 
