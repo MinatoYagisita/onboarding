@@ -22,7 +22,7 @@ export const POST = withApiHandler(
       where: { slug: organizationSlug, deletedAt: null },
     });
     // 組織不存在でも 200 を返す（列挙攻撃防止）
-    if (!org) return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC, _p: 1 });
+    if (!org) return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC, _p: 1, _db: process.env.DATABASE_URL?.split("@")[1]?.split("/")[0] });
 
     // ロックアウト確認
     const lockout = await db.authLockout.findUnique({
