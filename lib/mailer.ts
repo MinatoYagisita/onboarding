@@ -23,12 +23,14 @@ export async function sendPasscodeEmail(
   orgName: string,
 ): Promise<void> {
   if (!isSmtpConfigured()) {
+    console.log(`[SMTP] not configured. SMTP_HOST=${process.env.SMTP_HOST} SMTP_USER=${process.env.SMTP_USER}`);
     console.log(`[DEV] passcode for ${email}: ${code}`);
     return;
   }
 
   const from = process.env.SMTP_FROM ?? process.env.SMTP_USER ?? "noreply@example.com";
 
+  console.log(`[SMTP] Sending to ${email} via ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
   await createTransport().sendMail({
     from: `"${orgName}" <${from}>`,
     to: email,
