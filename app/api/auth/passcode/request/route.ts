@@ -57,11 +57,13 @@ export const POST = withApiHandler(
     } catch (err) {
       // FK制約違反 = users に存在しないメール → 列挙攻撃防止のため200を返す
       if ((err as { code?: string }).code === "P2003") {
+        console.log(`[PASSCODE] FK error - user not found: ${email}`);
         return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC });
       }
       throw err;
     }
 
+    console.log(`[PASSCODE] calling sendPasscodeEmail for: ${email}`);
     await sendPasscodeEmail(email, code, org.name);
 
     return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC });
