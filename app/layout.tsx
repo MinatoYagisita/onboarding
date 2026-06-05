@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP } from "next/font/google";
+import { headers } from "next/headers";
 import { OrgProvider } from "@/components/OrgProvider";
-import { getDefaultOrg } from "@/lib/server-org";
 import { orgProfile as defaultOrgProfile } from "@/lib/orgProfile";
+import { db } from "@/lib/db";
 import "./globals.css";
 
 const notoSansJp = Noto_Sans_JP({
@@ -22,7 +23,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const org = await getDefaultOrg().catch(() => null);
+  const slug =
+    (await headers()).get("x-organization-slug") ??
+    process.env.DEFAULT_ORG_SLUG;
+
+  const org = slug
+    ? await db.organization
+        .findFirst({ where: { slug, deletedAt: null }, include: { settings: true } })
+        .catch(() => null)
+    : null;
+
   const s = org?.settings;
 
   const initialProfile = {
