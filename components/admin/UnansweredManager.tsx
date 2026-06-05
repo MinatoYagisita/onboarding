@@ -40,7 +40,7 @@ export function UnansweredManager({ initialItems }: { initialItems: Item[] }) {
                 <td className="px-4 py-3 text-right">
                   <Link
                     href={`/admin/faqs?q=${encodeURIComponent(item.question)}`}
-                    className="text-xs text-blue-600 hover:text-blue-800"
+                    className="text-xs text-brand-600 hover:text-brand-700"
                   >
                     FAQに追加
                   </Link>

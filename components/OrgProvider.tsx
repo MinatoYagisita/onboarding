@@ -5,17 +5,12 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
-  useSyncExternalStore,
+  useState,
 } from "react";
 import {
   orgProfile as defaultOrgProfile,
   type OrgProfile,
 } from "@/lib/orgProfile";
-
-const STORAGE_KEY = "ob_org_profile_override";
-// 同一タブ内での localStorage 更新を購読者に通知するためのカスタムイベント。
-const LOCAL_EVENT = "ob-org-profile-update";
 
 type OrgContextValue = {
   profile: OrgProfile;
@@ -25,43 +20,21 @@ type OrgContextValue = {
 
 const OrgContext = createContext<OrgContextValue | null>(null);
 
-function subscribe(callback: () => void) {
-  window.addEventListener("storage", callback);
-  window.addEventListener(LOCAL_EVENT, callback);
-  return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener(LOCAL_EVENT, callback);
-  };
-}
-
-function getSnapshot(): string | null {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function getServerSnapshot(): string | null {
-  return null;
-}
-
 /**
- * 管理画面で編集された組織設定を localStorage で保持し、フロント全体へ配布する。
- * 本番実装では API `/org/settings` から取得した値を渡す。
+ * 組織設定をアプリ全体へ配布する。
+ * initialProfile はサーバーサイドの layout.tsx で DB から取得して渡す。
+ * updateProfile は保存直後の楽観的UI更新に使う（PATCH API と合わせて呼ぶ）。
  */
-export function OrgProvider({ children }: { children: React.ReactNode }) {
-  const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-
-  const profile = useMemo<OrgProfile>(() => {
-    if (!raw) return defaultOrgProfile;
-    try {
-      const parsed = JSON.parse(raw) as Partial<OrgProfile>;
-      return { ...defaultOrgProfile, ...parsed };
-    } catch {
-      return defaultOrgProfile;
-    }
-  }, [raw]);
+export function OrgProvider({
+  initialProfile,
+  children,
+}: {
+  initialProfile?: OrgProfile;
+  children: React.ReactNode;
+}) {
+  const [profile, setProfile] = useState<OrgProfile>(
+    initialProfile ?? defaultOrgProfile,
+  );
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -71,29 +44,11 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   }, [profile.brandPrimary]);
 
   const updateProfile = useCallback((patch: Partial<OrgProfile>) => {
-    let current: Partial<OrgProfile> = {};
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) current = JSON.parse(raw) as Partial<OrgProfile>;
-    } catch {
-      // 読み出し失敗は無視して default + patch で続行
-    }
-    const next = { ...defaultOrgProfile, ...current, ...patch };
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      window.dispatchEvent(new Event(LOCAL_EVENT));
-    } catch {
-      // localStorage 書き込み失敗時は何もできない
-    }
+    setProfile((prev) => ({ ...prev, ...patch }));
   }, []);
 
   const resetProfile = useCallback(() => {
-    try {
-      window.localStorage.removeItem(STORAGE_KEY);
-      window.dispatchEvent(new Event(LOCAL_EVENT));
-    } catch {
-      // noop
-    }
+    setProfile(defaultOrgProfile);
   }, []);
 
   return (

@@ -96,7 +96,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="例: 勤怠・シフト"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -106,14 +106,14 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
             value={newSlug}
             onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
             placeholder="例: attendance"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
           />
         </div>
         <button
           type="button"
           onClick={handleAdd}
           disabled={saving || !newName.trim() || !newSlug.trim()}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-40"
         >
           ＋ 追加
         </button>
@@ -160,7 +160,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
                           type="button"
                           onClick={() => handleEdit(cat.id)}
                           disabled={saving}
-                          className="text-xs text-blue-600 hover:underline disabled:opacity-40"
+                          className="text-xs text-brand-600 hover:underline disabled:opacity-40"
                         >
                           保存
                         </button>

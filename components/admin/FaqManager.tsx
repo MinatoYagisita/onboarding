@@ -203,7 +203,7 @@ export function FaqManager({
             type="button"
             onClick={handleSave}
             disabled={saving || !draft.question || !draft.answer.conclusion || !draft.answer.evidence || !draft.answer.contact}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-40"
           >
             {saving ? "保存中..." : "保存"}
           </button>
@@ -215,7 +215,7 @@ export function FaqManager({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <button type="button" onClick={openAdd} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <button type="button" onClick={openAdd} className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
           ＋ FAQ追加
         </button>
       </div>

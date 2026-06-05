@@ -31,7 +31,7 @@ export function AdminHeader({ title, description }: Props) {
 
         <Link
           href="/"
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           ユーザー画面へ
         </Link>
@@ -39,7 +39,7 @@ export function AdminHeader({ title, description }: Props) {
         <form action={adminLogout}>
           <button
             type="submit"
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             ログアウト
           </button>

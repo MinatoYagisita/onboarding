@@ -139,21 +139,21 @@ export function UserManager() {
       </div>
 
       {adding ? (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-col gap-3">
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-2">
             <input
               type="email"
               placeholder="メールアドレス"
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"
             />
             <input
               type="text"
               placeholder="表示名"
               value={form.displayName}
               onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"
             />
             <select
               value={form.role}
@@ -175,7 +175,7 @@ export function UserManager() {
             <button
               onClick={handleAdd}
               disabled={saving}
-              className="text-sm bg-gray-800 text-white px-4 py-1.5 rounded-lg hover:bg-gray-700 disabled:opacity-40"
+              className="text-sm bg-brand-600 text-white px-4 py-1.5 rounded-lg hover:bg-brand-700 disabled:opacity-40"
             >
               {saving ? "追加中..." : "追加する"}
             </button>

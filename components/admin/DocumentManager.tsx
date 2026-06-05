@@ -66,7 +66,7 @@ export function DocumentManager({ initialDocuments }: { initialDocuments: Doc[] 
         <div className="flex-1 text-sm text-gray-600">
           PDF・TXT・DOCX（最大10MB）をアップロードするとAIの回答に使われます。
         </div>
-        <label className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <label className="cursor-pointer rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
           {uploading ? "アップロード中..." : "ファイルを選択"}
           <input
             ref={fileRef}
