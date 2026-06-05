@@ -11,6 +11,8 @@ type Props = {
   threads: ChatThread[];
   activeThreadId: string | null;
   viewMode: ViewMode;
+  isOpen: boolean;
+  onClose: () => void;
   onSelectThread: (id: string) => void;
   onNewChat: () => void;
   onTogglePin: (id: string) => void;
@@ -22,6 +24,8 @@ export function Sidebar({
   threads,
   activeThreadId,
   viewMode,
+  isOpen,
+  onClose,
   onSelectThread,
   onNewChat,
   onTogglePin,
@@ -33,103 +37,128 @@ export function Sidebar({
   const unpinned = threads.filter((t) => !t.pinned);
 
   return (
-    <aside className="flex h-full w-72 flex-col border-r border-gray-200 bg-[#f7f8f5]">
-      <div className="flex items-center gap-2.5 px-4 py-4 border-b border-gray-200">
-        <OrgLogo size={28} />
-        <div className="flex flex-col leading-tight">
-          <span className="text-sm font-semibold text-gray-900">
-            {profile.orgName}
-          </span>
-          <span className="text-[10px] text-gray-500">
-            {profile.productSubtitle}
-          </span>
+    <>
+      {/* モバイル用バックドロップ */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={
+          "fixed inset-y-0 left-0 z-40 flex h-full w-72 flex-col border-r border-gray-200 bg-[#f7f8f5] transition-transform duration-300 md:relative md:translate-x-0 " +
+          (isOpen ? "translate-x-0" : "-translate-x-full")
+        }
+      >
+        <div className="flex items-center gap-2.5 border-b border-gray-200 px-4 py-4">
+          <OrgLogo size={28} />
+          <div className="flex min-w-0 flex-1 flex-col leading-tight">
+            <span className="truncate text-sm font-semibold text-gray-900">
+              {profile.orgName}
+            </span>
+            <span className="text-[10px] text-gray-500">
+              {profile.productSubtitle}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-md p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600 md:hidden"
+            aria-label="閉じる"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-      </div>
 
-      <nav className="flex gap-1 px-3 pt-3">
-        <TabButton
-          active={viewMode === "chat"}
-          onClick={() => onChangeView("chat")}
-        >
-          {profile.askTabLabel}
-        </TabButton>
-        <TabButton
-          active={viewMode === "faq"}
-          onClick={() => onChangeView("faq")}
-        >
-          {profile.faqTabLabel}
-        </TabButton>
-      </nav>
+        <nav className="flex gap-1 px-3 pt-3">
+          <TabButton
+            active={viewMode === "chat"}
+            onClick={() => { onChangeView("chat"); onClose(); }}
+          >
+            {profile.askTabLabel}
+          </TabButton>
+          <TabButton
+            active={viewMode === "faq"}
+            onClick={() => { onChangeView("faq"); onClose(); }}
+          >
+            {profile.faqTabLabel}
+          </TabButton>
+        </nav>
 
-      <div className="px-3 pt-3">
-        <button
-          type="button"
-          onClick={onNewChat}
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2 text-sm text-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500"
-        >
-          ＋ 新しい質問
-        </button>
-      </div>
+        <div className="px-3 pt-3">
+          <button
+            type="button"
+            onClick={() => { onNewChat(); onClose(); }}
+            className="w-full rounded-md border border-brand-200 bg-white px-3 py-2 text-sm text-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            ＋ 新しい質問
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto px-2 pb-4 pt-4">
-        {pinned.length > 0 && (
-          <Section title="ピン留め">
-            {pinned.map((thread) => (
-              <HistoryItem
-                key={thread.id}
-                thread={thread}
-                active={thread.id === activeThreadId && viewMode === "chat"}
-                onSelect={() => onSelectThread(thread.id)}
-                onTogglePin={() => onTogglePin(thread.id)}
-                onDelete={() => onDeleteThread(thread.id)}
-              />
-            ))}
-          </Section>
-        )}
-
-        <Section title="過去の質問">
-          {unpinned.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-gray-500">
-              まだ質問はありません
-            </p>
-          ) : (
-            unpinned.map((thread) => (
-              <HistoryItem
-                key={thread.id}
-                thread={thread}
-                active={thread.id === activeThreadId && viewMode === "chat"}
-                onSelect={() => onSelectThread(thread.id)}
-                onTogglePin={() => onTogglePin(thread.id)}
-                onDelete={() => onDeleteThread(thread.id)}
-              />
-            ))
+        <div className="flex-1 overflow-y-auto px-2 pb-4 pt-4">
+          {pinned.length > 0 && (
+            <Section title="ピン留め">
+              {pinned.map((thread) => (
+                <HistoryItem
+                  key={thread.id}
+                  thread={thread}
+                  active={thread.id === activeThreadId && viewMode === "chat"}
+                  onSelect={() => { onSelectThread(thread.id); onClose(); }}
+                  onTogglePin={() => onTogglePin(thread.id)}
+                  onDelete={() => onDeleteThread(thread.id)}
+                />
+              ))}
+            </Section>
           )}
-        </Section>
-      </div>
 
-      <div className="flex items-center gap-2 border-t border-gray-200 px-2 py-2">
-        <div className="flex-1">
-          <LogoutButton />
+          <Section title="過去の質問">
+            {unpinned.length === 0 ? (
+              <p className="px-2 py-3 text-xs text-gray-500">
+                まだ質問はありません
+              </p>
+            ) : (
+              unpinned.map((thread) => (
+                <HistoryItem
+                  key={thread.id}
+                  thread={thread}
+                  active={thread.id === activeThreadId && viewMode === "chat"}
+                  onSelect={() => { onSelectThread(thread.id); onClose(); }}
+                  onTogglePin={() => onTogglePin(thread.id)}
+                  onDelete={() => onDeleteThread(thread.id)}
+                />
+              ))
+            )}
+          </Section>
         </div>
-        <Link
-          href="/settings"
-          className="shrink-0 rounded px-2 py-1 text-[10px] text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          title="設定"
-        >
-          設定
-        </Link>
-        <Link
-          href="/admin"
-          className="shrink-0 rounded px-2 py-1 text-[10px] text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          title="管理画面へ"
-        >
-          管理画面
-        </Link>
-      </div>
-      <div className="border-t border-gray-200 py-2">
-        <PoweredBy />
-      </div>
-    </aside>
+
+        <div className="flex items-center gap-2 border-t border-gray-200 px-2 py-2">
+          <div className="flex-1">
+            <LogoutButton />
+          </div>
+          <Link
+            href="/settings"
+            className="shrink-0 rounded px-2 py-1 text-[10px] text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            title="設定"
+          >
+            設定
+          </Link>
+          <Link
+            href="/admin"
+            className="shrink-0 rounded px-2 py-1 text-[10px] text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            title="管理画面へ"
+          >
+            管理画面
+          </Link>
+        </div>
+        <div className="border-t border-gray-200 py-2">
+          <PoweredBy />
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -201,19 +230,19 @@ function HistoryItem({
       <button
         type="button"
         onClick={onSelect}
-        className="flex-1 min-w-0 text-left focus:outline-none"
+        className="min-w-0 flex-1 text-left focus:outline-none"
         title={title}
       >
         <div className="flex items-center gap-1.5">
           <span className="truncate text-gray-900">{title}</span>
           {turnCount > 1 && (
-            <span className="shrink-0 rounded bg-white px-1 py-0.5 text-[10px] font-medium text-brand-700 border border-brand-200">
+            <span className="shrink-0 rounded border border-brand-200 bg-white px-1 py-0.5 text-[10px] font-medium text-brand-700">
               +{turnCount - 1}
             </span>
           )}
         </div>
         {thread.memo && (
-          <div className="truncate text-xs text-gray-500 mt-0.5">
+          <div className="mt-0.5 truncate text-xs text-gray-500">
             メモ: {thread.memo}
           </div>
         )}

@@ -63,7 +63,7 @@ export function ChatInput({
 
   const containerClass = isHero
     ? "w-full"
-    : "border-t border-gray-200 bg-white px-6 py-4";
+    : "border-t border-gray-200 bg-white px-4 py-3 sm:px-6 sm:py-4";
 
   const innerClass = isHero ? "" : "mx-auto max-w-3xl";
 
@@ -98,7 +98,7 @@ export function ChatInput({
             送信
           </button>
         </div>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 hidden text-xs text-gray-500 sm:block">
           Enter で改行 /{" "}
           <kbd className="rounded border border-gray-300 bg-gray-50 px-1 font-mono text-[10px]">
             ⌘

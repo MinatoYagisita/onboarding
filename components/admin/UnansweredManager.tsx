@@ -19,7 +19,7 @@ export function UnansweredManager({ initialItems }: { initialItems: Item[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-xl border border-amber-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-amber-200 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-amber-50 text-xs uppercase tracking-wide text-amber-900">
             <tr>

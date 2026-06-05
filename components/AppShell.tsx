@@ -6,6 +6,7 @@ import { Sidebar } from "./Sidebar";
 import { ChatView } from "./ChatView";
 import { FaqView } from "./FaqView";
 import { WelcomeView } from "./WelcomeView";
+import { useOrg } from "./OrgProvider";
 
 // ─── API response shapes ─────────────────────────────────────────────────────
 
@@ -56,11 +57,13 @@ function apiThreadToChatThread(t: ApiThread): ChatThread {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function AppShell() {
+  const { profile } = useOrg();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("chat");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const activeThread = threads.find((t) => t.id === activeThreadId) ?? null;
 
@@ -177,7 +180,6 @@ export function AppShell() {
   const handleSelectThread = async (threadId: string) => {
     const existing = threads.find((t) => t.id === threadId);
     if (existing && existing.turns.length === 0) {
-      // Fetch full thread with turns
       try {
         const res = await fetch(`/api/threads/${threadId}`);
         if (res.ok) {
@@ -221,13 +223,30 @@ export function AppShell() {
         threads={threads}
         activeThreadId={activeThreadId}
         viewMode={viewMode}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         onSelectThread={handleSelectThread}
         onNewChat={handleNewChat}
         onTogglePin={handleTogglePin}
         onDeleteThread={handleDeleteThread}
         onChangeView={handleChangeView}
       />
-      <main className="flex flex-1 flex-col overflow-hidden">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* モバイル用トップバー */}
+        <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 md:hidden">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-md p-1.5 text-gray-600 hover:bg-gray-100"
+            aria-label="メニューを開く"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="text-sm font-semibold text-gray-900">{profile.orgName}</span>
+        </div>
+
         {submitError && (
           <div className="flex items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
             <span>{submitError}</span>
