@@ -36,7 +36,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/auth/mock-login",
 ];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") ?? "";
 
