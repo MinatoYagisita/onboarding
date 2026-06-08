@@ -68,6 +68,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
+  // API ルート: リダイレクトではなく 401 を返す。front / admin どちらのセッションでも通過
+  if (pathname.startsWith("/api/")) {
+    if (!hasFrontSession && !hasAdminSession) {
+      return Response.json(
+        { error: { code: "UNAUTHENTICATED", message: "認証が必要です" } },
+        { status: 401 },
+      );
+    }
+    return next();
+  }
+
   if (isAdminRoute) {
     if (!hasAdminSession && !isAdminLogin) {
       const url = request.nextUrl.clone();

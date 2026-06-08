@@ -1,8 +1,10 @@
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { resolveOrg, notFound, withApiHandler } from "@/lib/api";
+import { requireAdminSession } from "@/lib/session";
 
 export const GET = withApiHandler("GET /api/admin/unanswered", async (req: NextRequest) => {
+  await requireAdminSession(req);
   const org = await resolveOrg(req);
   if (!org) return notFound("組織が見つかりません");
 

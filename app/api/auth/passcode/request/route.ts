@@ -20,6 +20,7 @@ export const POST = withApiHandler(
 
     const org = await db.organization.findFirst({
       where: { slug: organizationSlug, deletedAt: null },
+      include: { settings: true },
     });
     // 組織不存在でも 200 を返す（列挙攻撃防止）
     if (!org) return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC, _p: 1, _db: process.env.DATABASE_URL?.split("@")[1]?.split("/")[0] });
@@ -62,7 +63,7 @@ export const POST = withApiHandler(
       throw err;
     }
 
-    await sendPasscodeEmail(email, code, org.name);
+    await sendPasscodeEmail(email, code, org.settings?.orgNameDisplay ?? org.name);
 
     return Response.json({ ok: true, expiresInSec: PASSCODE_TTL_SEC, _p: 3 });
   },

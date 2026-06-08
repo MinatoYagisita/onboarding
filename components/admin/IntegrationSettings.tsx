@@ -270,12 +270,12 @@ export function IntegrationSettings() {
                   <span className="text-sm text-gray-700">自動同期</span>
                   <button
                     onClick={() => handleToggleSync(provider, !info.syncEnabled)}
-                    className={`relative w-10 h-5 rounded-full transition-colors ${
+                    className={`relative w-10 h-5 rounded-full overflow-hidden transition-colors ${
                       info.syncEnabled ? "bg-green-500" : "bg-gray-300"
                     }`}
                   >
                     <span
-                      className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                      className={`absolute left-0 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
                         info.syncEnabled ? "translate-x-5" : "translate-x-0.5"
                       }`}
                     />

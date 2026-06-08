@@ -14,8 +14,8 @@ const notoSansJp = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "オンボーディング Q&A（モック）",
-  description: "新人・バイト向けオンボーディング Q&A システムのモック版",
+  title: "オンボーディング Q&A",
+  description: "新人・バイト向けオンボーディング Q&A システム",
 };
 
 export default async function RootLayout({
