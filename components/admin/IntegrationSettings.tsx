@@ -328,7 +328,7 @@ export function IntegrationSettings() {
                     ⚠️ 同期エラー: {syncClientError}
                   </div>
                 )}
-                {!syncClientError && info.lastSyncError && (
+                {info.lastSyncError && (
                   <div className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">
                     {info.lastSyncError}
                   </div>
