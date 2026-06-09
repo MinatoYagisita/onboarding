@@ -111,13 +111,13 @@ export function NotificationSettings() {
           </div>
           <button
             onClick={() => handleToggle(ch.id)}
-            className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${
+            className={`relative w-9 h-5 rounded-full overflow-hidden transition-colors flex-shrink-0 ${
               ch.enabled ? "bg-green-500" : "bg-gray-300"
             }`}
             aria-label={ch.enabled ? "無効にする" : "有効にする"}
           >
             <span
-              className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+              className={`absolute left-0 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
                 ch.enabled ? "translate-x-4" : "translate-x-0.5"
               }`}
             />
