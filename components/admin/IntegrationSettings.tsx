@@ -32,6 +32,7 @@ export function IntegrationSettings() {
   const [data, setData] = useState<IntegrationsState | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [syncClientError, setSyncClientError] = useState<string | null>(null);
   const [folderInputs, setFolderInputs] = useState<Record<string, string>>({});
   const [showBoxPicker, setShowBoxPicker] = useState(false);
   const boxPickerRef = useRef<HTMLDivElement>(null);
@@ -182,9 +183,19 @@ export function IntegrationSettings() {
 
   const handleSync = async (provider: string) => {
     setSyncing(provider);
-    await fetch(`/api/org/integrations/${API_PROVIDER[provider]}/sync`, { method: "POST" });
-    await load();
-    setSyncing(null);
+    setSyncClientError(null);
+    try {
+      const res = await fetch(`/api/org/integrations/${API_PROVIDER[provider]}/sync`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setSyncClientError(body?.error?.message ?? `HTTP ${res.status}`);
+      }
+    } catch (e) {
+      setSyncClientError(e instanceof Error ? e.message : "同期リクエストに失敗しました");
+    } finally {
+      await load();
+      setSyncing(null);
+    }
   };
 
   if (loading) return <div className="text-sm text-gray-400">読み込み中...</div>;
@@ -312,7 +323,12 @@ export function IntegrationSettings() {
                 </div>
 
                 {/* エラー表示 */}
-                {info.lastSyncError && (
+                {syncClientError && (
+                  <div className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">
+                    ⚠️ 同期エラー: {syncClientError}
+                  </div>
+                )}
+                {!syncClientError && info.lastSyncError && (
                   <div className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">
                     {info.lastSyncError}
                   </div>
