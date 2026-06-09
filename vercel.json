@@ -1,7 +1,1 @@
-{
-  "functions": {
-    "app/api/org/integrations/[provider]/sync/route.ts": {
-      "maxDuration": 60
-    }
-  }
-}
+{}

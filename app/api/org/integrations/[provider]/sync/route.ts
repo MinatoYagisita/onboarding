@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { resolveOrg } from "@/lib/api";
 import { syncConnection } from "@/lib/drive-sync";
 
+export const maxDuration = 60;
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ provider: string }> }
