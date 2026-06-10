@@ -157,11 +157,11 @@ export async function buildSystemPrompt(
     db.faq.findMany({
       where: { organizationId, isPublished: true, deletedAt: null },
       orderBy: { askedCount: "desc" },
-    }),
+    }).catch(() => []),
     db.document.findMany({
       where: { organizationId, deletedAt: null, content: { not: null } },
       select: { id: true, title: true, content: true },
-    }),
+    }).catch((err) => { console.error("[buildSystemPrompt] document query failed:", err?.message ?? err); return [] as { id: string; title: string; content: string | null }[]; }),
   ]);
 
   const faqSection =
