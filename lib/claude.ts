@@ -1,4 +1,3 @@
-import Groq from "groq-sdk";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { db } from "./db";
@@ -9,7 +8,7 @@ import { AiUnavailableError } from "./errors";
 
 // ─── Tool definitions ─────────────────────────────────────────────────────────
 
-const groqTools: Groq.Chat.ChatCompletionTool[] = [
+const groqTools = [
   {
     type: "function",
     function: {
@@ -198,7 +197,9 @@ ${faqSection}${docSection ? `\n\n${docSection}` : ""}`;
 
 type HistoryTurn = { question: string; result: ClaudeResult };
 
-async function callWithGroq(client: Groq, systemPrompt: string, userContent: string): Promise<ClaudeResult> {
+async function callWithGroq(apiKey: string, systemPrompt: string, userContent: string): Promise<ClaudeResult> {
+  const { default: Groq } = await import("groq-sdk");
+  const client = new Groq({ apiKey });
   const response = await client.chat.completions.create({
     model: "llama-3.3-70b-versatile",
     messages: [
@@ -289,8 +290,7 @@ export async function askClaude(
         const client = new Anthropic({ apiKey: orgApiKey.apiKey });
         return await callWithClaude(client, systemPrompt, userContent);
       } else {
-        const client = new Groq({ apiKey: orgApiKey.apiKey });
-        return await callWithGroq(client, systemPrompt, userContent);
+        return await callWithGroq(orgApiKey.apiKey, systemPrompt, userContent);
       }
     } catch (err) {
       lastErr = err;
