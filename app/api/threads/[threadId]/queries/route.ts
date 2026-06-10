@@ -5,8 +5,11 @@ import { buildSystemPrompt, askClaude, AnswerInputSchema } from "@/lib/claude";
 import { validationError, notFound, withParamsHandler } from "@/lib/api";
 import { requireSession } from "@/lib/session";
 import { getOrgApiKey } from "@/lib/secrets";
+import { AiUnavailableError } from "@/lib/errors";
 import { notifyUnanswered } from "@/lib/notify";
 import { fetchRelatedFaqs } from "@/lib/faq";
+
+export const maxDuration = 60;
 
 const PostSchema = z.object({
   question: z.string().min(1).max(1000),
@@ -41,11 +44,23 @@ export const POST = withParamsHandler<{ threadId: string }>(
       question: q.question,
       result:
         q.resultKind === "answer"
-          ? { kind: "answer" as const, answer: AnswerInputSchema.parse(q.answer) }
+          ? {
+              kind: "answer" as const,
+              answer: AnswerInputSchema.safeParse(q.answer).data ?? { conclusion: q.question, evidence: "", contact: "", sources: [] },
+            }
           : { kind: "not-found" as const, relatedFaqIds: (q.relatedFaqIds as string[]) ?? [] },
     }));
 
-    const orgApiKey = await getOrgApiKey(org.id);
+    let orgApiKey;
+    try {
+      orgApiKey = await getOrgApiKey(org.id);
+    } catch (err) {
+      throw new AiUnavailableError({
+        provider: "unknown",
+        attempts: 0,
+        cause: err instanceof Error ? err.message : "API キーの取得に失敗しました",
+      });
+    }
     const systemPrompt = await buildSystemPrompt(org.id, orgName);
     const claudeResult = await askClaude(systemPrompt, question, history, orgApiKey);
 

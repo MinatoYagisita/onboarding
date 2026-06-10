@@ -5,8 +5,11 @@ import { buildSystemPrompt, askClaude } from "@/lib/claude";
 import { validationError, notFound, withApiHandler } from "@/lib/api";
 import { requireSession } from "@/lib/session";
 import { getOrgApiKey } from "@/lib/secrets";
+import { AiUnavailableError } from "@/lib/errors";
 import { notifyUnanswered } from "@/lib/notify";
 import { fetchRelatedFaqs } from "@/lib/faq";
+
+export const maxDuration = 60;
 
 const PostSchema = z.object({
   question: z.string().min(1).max(1000),
@@ -29,7 +32,16 @@ export const POST = withApiHandler("POST /api/threads", async (req) => {
   if (!org) return notFound("組織が見つかりません");
 
   const orgName = org.settings?.orgNameDisplay ?? org.name;
-  const orgApiKey = await getOrgApiKey(org.id);
+  let orgApiKey;
+  try {
+    orgApiKey = await getOrgApiKey(org.id);
+  } catch (err) {
+    throw new AiUnavailableError({
+      provider: "unknown",
+      attempts: 0,
+      cause: err instanceof Error ? err.message : "API キーの取得に失敗しました",
+    });
+  }
   const systemPrompt = await buildSystemPrompt(org.id, orgName);
   const claudeResult = await askClaude(systemPrompt, question, [], orgApiKey);
 

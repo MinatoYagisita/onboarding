@@ -21,12 +21,19 @@ function isAwsConfigured(): boolean {
 }
 
 async function fetchSecret(secretId: string): Promise<Record<string, string> | null> {
+  let secretString: string | undefined;
   try {
     const res = await makeClient().send(new GetSecretValueCommand({ SecretId: secretId }));
-    return res.SecretString ? (JSON.parse(res.SecretString) as Record<string, string>) : null;
+    secretString = res.SecretString;
   } catch (err) {
     if ((err as { name?: string }).name === "ResourceNotFoundException") return null;
     throw err;
+  }
+  if (!secretString) return null;
+  try {
+    return JSON.parse(secretString) as Record<string, string>;
+  } catch {
+    throw new Error(`Secret "${secretId}" の値が不正な JSON です`);
   }
 }
 
