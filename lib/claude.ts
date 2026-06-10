@@ -279,20 +279,19 @@ export async function askClaude(
     userContent = `[会話履歴]\n${historyText}\n\n[新しい質問]\n${question}`;
   }
 
-  const effectiveProvider = orgApiKey.provider as "groq" | "claude";
-  const groqClient = effectiveProvider !== "claude" ? new Groq({ apiKey: orgApiKey.apiKey }) : null;
-  const anthropicClient = effectiveProvider === "claude" ? new Anthropic({ apiKey: orgApiKey.apiKey }) : null;
-
-  const call = () =>
-    effectiveProvider === "claude"
-      ? callWithClaude(anthropicClient!, systemPrompt, userContent)
-      : callWithGroq(groqClient!, systemPrompt, userContent);
+  const effectiveProvider = (orgApiKey.provider ?? "") as "groq" | "claude";
 
   const MAX_ATTEMPTS = 3;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      return await call();
+      if (effectiveProvider === "claude") {
+        const client = new Anthropic({ apiKey: orgApiKey.apiKey });
+        return await callWithClaude(client, systemPrompt, userContent);
+      } else {
+        const client = new Groq({ apiKey: orgApiKey.apiKey });
+        return await callWithGroq(client, systemPrompt, userContent);
+      }
     } catch (err) {
       lastErr = err;
       if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 500 * attempt));
