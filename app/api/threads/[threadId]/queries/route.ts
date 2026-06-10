@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { buildSystemPrompt, askClaude, AnswerInputSchema } from "@/lib/claude";
+import { buildSystemPrompt, askClaude, AnswerInputSchema, type ClaudeResult } from "@/lib/claude";
 import { validationError, notFound, withParamsHandler } from "@/lib/api";
 import { requireSession } from "@/lib/session";
 import { getOrgApiKey } from "@/lib/secrets";
@@ -40,16 +40,14 @@ export const POST = withParamsHandler<{ threadId: string }>(
     if (!org) return notFound("組織が見つかりません");
 
     const orgName = org.settings?.orgNameDisplay ?? org.name;
-    const history = thread.queries.map((q) => ({
-      question: q.question,
-      result:
-        q.resultKind === "answer"
-          ? {
-              kind: "answer" as const,
-              answer: AnswerInputSchema.safeParse(q.answer).data ?? { conclusion: q.question, evidence: "", contact: "", sources: [] },
-            }
-          : { kind: "not-found" as const, relatedFaqIds: (q.relatedFaqIds as string[]) ?? [] },
-    }));
+    const history: { question: string; result: ClaudeResult }[] = thread.queries.flatMap((q) => {
+      if (q.resultKind === "answer") {
+        const parsed = AnswerInputSchema.safeParse(q.answer);
+        if (!parsed.success) return [];
+        return [{ question: q.question, result: { kind: "answer" as const, answer: parsed.data } as ClaudeResult }];
+      }
+      return [{ question: q.question, result: { kind: "not-found" as const, relatedFaqIds: (q.relatedFaqIds as string[]) ?? [] } as ClaudeResult }];
+    });
 
     let orgApiKey;
     try {
